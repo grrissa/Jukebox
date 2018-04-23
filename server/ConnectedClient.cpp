@@ -38,7 +38,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	 * anything because of a full socket buffer, we should do the following:
 	 *
 	 * 1. update our state field to be sending
-	 * 2. sent our sender field to be the ArraySender object we created
+	 * 2. set our sender field to be the ArraySender object we created
 	 * 3. update epoll so that it also watches for EPOLLOUT for this client
 	 *    socket (use epoll_ctl with EPOLL_CTL_MOD).
 	 */
