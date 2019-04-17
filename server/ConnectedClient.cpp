@@ -19,7 +19,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	char *data_to_send = new char[CHUNK_SIZE*2000];
 	memset(data_to_send, 117, CHUNK_SIZE*2000); // 117 is ascii 'u'
 
-	ArraySender *as = new ArraySender(data_to_send, CHUNK_SIZE*2000);
+	ArraySender *array_sender = new ArraySender(data_to_send, CHUNK_SIZE*2000);
 	delete[] data_to_send;
 
 	ssize_t num_bytes_sent;
@@ -28,7 +28,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	// keep sending the next chunk until it says we either didn't send
 	// anything (0 return indicates nothing left to send) or until we can't
 	// send anymore because of a full socket buffer (-1 return value)
-	while((num_bytes_sent = as->send_next_chunk(this->client_fd)) > 0) {
+	while((num_bytes_sent = array_sender->send_next_chunk(this->client_fd)) > 0) {
 		total_bytes_sent += num_bytes_sent;
 	}
 	cout << "sent " << total_bytes_sent << " bytes to client\n";
@@ -44,13 +44,13 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	 */
 	if (num_bytes_sent < 0) {
 		// Fill this in with the three steps listed in the comment above.
-		// Hint: Do NOT delete as here (you'll need it to continue sending
-		// 	later).
+		// Hint: Do NOT delete array_sender here (you'll need it to continue
+		// sending later).
 	}
 	else {
 		// Sent everything with no problem so we are done with our ArraySender
 		// object.
-		delete as;
+		delete array_sender;
 	}
 }
 

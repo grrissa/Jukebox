@@ -22,9 +22,9 @@ class ChunkedDataSender {
  */
 class ArraySender : public virtual ChunkedDataSender {
   private:
-	char *array;
-	size_t array_length;
-	size_t curr_loc;
+	char *array; // the array of data to send
+	size_t array_length; // length of the array to send (in bytes)
+	size_t curr_loc; // index in array where next send will start
 
   public:
 	/**

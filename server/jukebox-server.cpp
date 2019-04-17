@@ -41,6 +41,7 @@ using std::cout;
 using std::cerr;
 using std::string;
 using std::vector;
+using std::map;
 
 const int BACKLOG = 10;
 const int MAX_EVENTS = 64;
@@ -246,10 +247,16 @@ int find_mp3_files(const char *dir) {
  * @param epoll_fd File descriptor for epoll
  */
 void setup_new_client(int server_socket, 
-						std::map<int, ConnectedClient> &clients, 
+						map<int, ConnectedClient> &clients, 
 						int epoll_fd) {
 	int client_fd = accept_connection(server_socket);
 	cout << "Accepted a new connection!\n";
+
+	// The client_fd shouldn't exist in our clients map.
+	if (clients.find(client_fd) != clients.end()) {
+		cerr << "ERROR: File descriptor already mapped to an existing client.\n";
+		exit(EXIT_FAILURE);
+	}
 
 	// Set this to non-blocking mode so we never get hung up
 	// trying to send or receive from this client.
@@ -266,11 +273,11 @@ void setup_new_client(int server_socket,
 		exit(EXIT_FAILURE);
 	}
 
-	ConnectedClient cc;
-	cc.client_fd = client_fd;
-	cc.sender = NULL;
-	cc.state = RECEIVING;
+	// We have a new client so we'll create a new ConnectClient object to
+	// represent this new client.
+	ConnectedClient cc(client_fd, RECEIVING);
 
+	// Add this new connected client to our map from file descriptor to client.
 	clients[client_fd] = cc;
 }
 
@@ -282,7 +289,7 @@ void setup_new_client(int server_socket,
  */
 void event_loop(int epoll_fd, int server_socket) {
 	// associate client's file descriptor with its ConnectedClient object
-	std::map<int, ConnectedClient> clients;
+	map<int, ConnectedClient> clients;
 
     while (true) {
 		// wait for some events to occur, writing them to our events array
