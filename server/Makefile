@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS=-Wall -Wextra -g -O1 -std=c++11 -lboost_system -lboost_filesystem
+CXXFLAGS=-Wall -Wextra -g -O1 -std=c++17
 
 SRC_FILES = jukebox-server.cpp ChunkedDataSender.cpp ConnectedClient.cpp
 TARGETS = jukebox-server

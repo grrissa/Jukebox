@@ -31,18 +31,22 @@ ssize_t ArraySender::send_next_chunk(int sock_fd) {
 
 		ssize_t num_bytes_sent = send(sock_fd, chunk, bytes_in_chunk, 0);
 
-		if (num_bytes_sent < 0 && errno != EAGAIN) {
-			perror("send_next_chunk send");
-			exit(EXIT_FAILURE);
-		}
-		else if (num_bytes_sent > 0) {
+		if (num_bytes_sent > 0) {
 			// We successfully send some of the data so update our location in
 			// the array so we know where to start sending the next time we
 			// call this function.
 			curr_loc += num_bytes_sent;
+			return num_bytes_sent;
 		}
-
-		return num_bytes_sent;
+		else if (num_bytes_sent < 0 && errno == EAGAIN) {
+			// We couldn't send anything because the buffer was full
+			return -1;
+		}
+		else {
+			// Send had an error which we didn't expect, so exit the program.
+			perror("send_next_chunk send");
+			exit(EXIT_FAILURE);
+		}
 	}
 	else {
 		return 0;

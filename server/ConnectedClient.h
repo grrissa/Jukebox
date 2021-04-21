@@ -24,11 +24,13 @@ class ConnectedClient {
 	 * Constructor that takes the client's socket file descriptor and the
 	 * initial state of the client.
 	 */
-	ConnectedClient(int fd, ClientState initial_state) : 
-		client_fd(fd), sender(NULL), state(initial_state) {}
+	ConnectedClient(int fd, ClientState initial_state);
 
-	// No-argument constructor
+	/**
+	 * No argument constructor.
+	 */
 	ConnectedClient() : client_fd(-1), sender(NULL), state(RECEIVING) {}
+
 
 	// Member Functions (i.e. Methods)
 	

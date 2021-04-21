@@ -13,6 +13,9 @@
 using std::cout;
 using std::cerr;
 
+ConnectedClient::ConnectedClient(int fd, ClientState initial_state) :
+	client_fd(fd), sender(NULL), state(initial_state) {}
+
 void ConnectedClient::send_dummy_response(int epoll_fd) {
 	// Create a large array, just to make sure we can send a lot of data in
 	// smaller chunks.
@@ -20,7 +23,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	memset(data_to_send, 117, CHUNK_SIZE*2000); // 117 is ascii 'u'
 
 	ArraySender *array_sender = new ArraySender(data_to_send, CHUNK_SIZE*2000);
-	delete[] data_to_send;
+	delete[] data_to_send; // The ArraySender creates its own copy of the data so let's delete this copy
 
 	ssize_t num_bytes_sent;
 	ssize_t total_bytes_sent = 0;
@@ -41,10 +44,13 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	 * 2. set our sender field to be the ArraySender object we created
 	 * 3. update epoll so that it also watches for EPOLLOUT for this client
 	 *    socket (use epoll_ctl with EPOLL_CTL_MOD).
+	 *
+	 * WARNING: These steps are to be done inside of the following if statement,
+	 * not before it.
 	 */
 	if (num_bytes_sent < 0) {
 		// Fill this in with the three steps listed in the comment above.
-		// Hint: Do NOT delete array_sender here (you'll need it to continue
+		// WARNING: Do NOT delete array_sender here (you'll need it to continue
 		// sending later).
 	}
 	else {
