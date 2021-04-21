@@ -13,9 +13,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
-
-// C++ extra libraries
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 // C standard libraries
 #include <cerrno>
@@ -35,7 +33,7 @@
 #include "ChunkedDataSender.h"
 #include "ConnectedClient.h"
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 using std::cout;
 using std::cerr;
