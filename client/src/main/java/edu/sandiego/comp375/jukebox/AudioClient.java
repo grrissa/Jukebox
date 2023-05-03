@@ -4,6 +4,13 @@ import java.io.BufferedInputStream;
 import java.net.Socket;
 import java.util.Scanner;
 
+enum MESSAGE {
+  PLAY,
+  INFO,
+  LIST,
+  STOP
+}
+
 /**
  * Class representing a client to our Jukebox.
  */
@@ -18,11 +25,24 @@ public class AudioClient {
 		while (true) {
 			System.out.print(">> ");
 			String command = s.nextLine();
-			if (command.equals("play")) {
+			String[] command = command.split(" ");
+			if (command[0].equals("play")) {
 				try {
 					Socket socket = new Socket("127.0.0.1", 6666);
 					if (socket.isConnected()) {
 						in = new BufferedInputStream(socket.getInputStream(), 2048);
+
+						// checking that the song number is a number
+						try {
+							int song_num = (int)command[0];
+
+
+
+						} catch (Exception e) {
+							System.out.println(e);
+						}
+
+
 						player = new Thread(new AudioPlayerThread(in));
 						player.start();
 					}
@@ -31,7 +51,7 @@ public class AudioClient {
 					System.out.println(e);
 				}
 			}
-			else if (command.equals("exit")) {
+			else if (command[0].equals("exit")) {
 				// Currently this doesn't actually stop the music from
 				// playing.
 				// Your final solution should make sure that the exit command
@@ -39,15 +59,15 @@ public class AudioClient {
 				System.out.println("Goodbye!");
 				break;
 			}
-			else if (command.equals("list")) {
+			else if (command[0].equals("list")) {
 				
 				break;
 			}
-			else if (command.equals("info")) {
+			else if (command[0].equals("info")) {
 				
 				break;
 			}
-			else if (command.equals("stop")) {
+			else if (command[0].equals("stop")) {
 				
 				break;
 			}
