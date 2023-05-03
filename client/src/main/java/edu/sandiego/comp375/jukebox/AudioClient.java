@@ -39,6 +39,18 @@ public class AudioClient {
 				System.out.println("Goodbye!");
 				break;
 			}
+			else if (command.equals("list")) {
+				
+				break;
+			}
+			else if (command.equals("info")) {
+				
+				break;
+			}
+			else if (command.equals("stop")) {
+				
+				break;
+			}
 			else {
 				System.err.println("ERROR: unknown command");
 			}
