@@ -52,6 +52,14 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 		// Fill this in with the three steps listed in the comment above.
 		// WARNING: Do NOT delete array_sender here (you'll need it to continue
 		// sending later).
+		this->state = SENDING;
+		this->sender = array_sender;
+
+		if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, server_socket, &server_ev) == -1) {
+		perror("epoll_ctl");
+		exit(1);
+	}
+		
 	}
 	else {
 		// Sent everything with no problem so we are done with our ArraySender

@@ -8,7 +8,16 @@ enum MESSAGE {
   PLAY,
   INFO,
   LIST,
-  STOP
+  STOP,
+  BAD_REQ,
+  SONG_LEN,
+  INFO_DATA,
+  LIST_DATA
+}
+
+public class Header {
+	int song_num;
+	MESSAGE type;
 }
 
 /**
@@ -26,22 +35,30 @@ public class AudioClient {
 			System.out.print(">> ");
 			String command = s.nextLine();
 			String[] command = command.split(" ");
+			Socket socket = new Socket("127.0.0.1", 6666); // moved this outside the if (command) statements
 			if (command[0].equals("play")) {
 				try {
-					Socket socket = new Socket("127.0.0.1", 6666);
 					if (socket.isConnected()) {
-						in = new BufferedInputStream(socket.getInputStream(), 2048);
+						in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 
 						// checking that the song number is a number
 						try {
 							int song_num = (int)command[0];
 
+							Header hdr = new Header();
+							hdr.song_num = song_num;
+							hdr.type = PLAY;
 
+							// put the header in a buffer and send it
+							// QUESTION: how do we send a message?
+
+							// we wait to receive a message from server with the byte size of the song
+							// continue receiving until the recv_count is equal to ^^
+							// utilize 'in'?
 
 						} catch (Exception e) {
 							System.out.println(e);
 						}
-
 
 						player = new Thread(new AudioPlayerThread(in));
 						player.start();
