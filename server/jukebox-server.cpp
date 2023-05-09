@@ -1,7 +1,9 @@
 /*
  * File: jukebox-server.cpp
  *
- * Authors: (TODO: Fill this in with author info)
+ * Authors: 
+ * Alizea Hinz (ahinz@sandiego.edu)
+ * Marissa Nicole Esteban (marissanicoleesteban@sandiego.edu)
  *
  * Server for an Internet Jukebox.
  */
