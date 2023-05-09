@@ -56,9 +56,9 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 		this->sender = array_sender;
 
 		if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, server_socket, &server_ev) == -1) {
-		perror("epoll_ctl");
-		exit(1);
-	}
+			perror("epoll_ctl");
+			exit(1);
+		}
 		
 	}
 	else {
@@ -71,6 +71,9 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 void ConnectedClient::handle_input(int epoll_fd) {
 	cout << "Ready to read from client " << this->client_fd << "\n";
 	char data[1024];
+	// added
+
+	// until here
 	ssize_t bytes_received = recv(this->client_fd, data, 1024, 0);
 	if (bytes_received < 0) {
 		perror("client_read recv");

@@ -10,9 +10,8 @@ import java.nio.ByteOrder;
 import java.util.Scanner;
 import java.lang.Exception;
 
-<<<<<<< HEAD
 enum MessageType {
-  PLAY, INFO, LIST, STOP, ILLEGAL;
+  PLAY, INFO, LIST, STOP, BAD_REQ,SONG_LEN,INFO_DATA,LIST_DATA;
 
   private static final MessageType values[] = values();
 
@@ -22,27 +21,16 @@ enum MessageType {
 	 */
 	public static MessageType get(int ordinal) { 
 		if (ordinal >= values.length) {
-			return MessageType.ILLEGAL;
+			return MessageType.BAD_REQ;
 		}
 		return values[ordinal];
 	}
-=======
-enum MESSAGE {
-  PLAY,
-  INFO,
-  LIST,
-  STOP,
-  BAD_REQ,
-  SONG_LEN,
-  INFO_DATA,
-  LIST_DATA
 }
 
-public class Header {
-	int song_num;
-	MESSAGE type;
->>>>>>> 5e58157d8f8a31a642490980ee0fd7d677fa122b
-}
+// public class Header {
+// 	int song_num;
+// 	MessageType type;
+// }
 
 /**
  * Class representing a client to our Jukebox.
@@ -70,24 +58,10 @@ public class AudioClient {
 							int song_num = (int)command[0];
 							sendHeader(socket, MessageType.PLAY, song_num);
 
-<<<<<<< HEAD
 							// keep calling getMessage until 
 							while (getMessage(socket));
 							
 								//serverSocket.close();
-=======
-							Header hdr = new Header();
-							hdr.song_num = song_num;
-							hdr.type = PLAY;
-
-							// put the header in a buffer and send it
-							// QUESTION: how do we send a message?
-
-							// we wait to receive a message from server with the byte size of the song
-							// continue receiving until the recv_count is equal to ^^
-							// utilize 'in'?
-
->>>>>>> 5e58157d8f8a31a642490980ee0fd7d677fa122b
 						} catch (Exception e) {
 							System.out.println(e);
 						}
@@ -182,7 +156,7 @@ public class AudioClient {
 			System.out.println("Server said goodbye!");
 			return false;
 		}
-		else if (response_type == MessageType.ILLEGAL) {
+		else if (response_type == MessageType.BAD_REQ) {
 			System.out.println("Server said goodbye!");
 			return false;
 		}
