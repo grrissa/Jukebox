@@ -10,6 +10,7 @@ import java.nio.ByteOrder;
 import java.util.Scanner;
 import java.lang.Exception;
 
+<<<<<<< HEAD
 enum MessageType {
   PLAY, INFO, LIST, STOP, ILLEGAL;
 
@@ -25,6 +26,22 @@ enum MessageType {
 		}
 		return values[ordinal];
 	}
+=======
+enum MESSAGE {
+  PLAY,
+  INFO,
+  LIST,
+  STOP,
+  BAD_REQ,
+  SONG_LEN,
+  INFO_DATA,
+  LIST_DATA
+}
+
+public class Header {
+	int song_num;
+	MESSAGE type;
+>>>>>>> 5e58157d8f8a31a642490980ee0fd7d677fa122b
 }
 
 /**
@@ -42,25 +59,38 @@ public class AudioClient {
 			System.out.print(">> ");
 			String command = s.nextLine();
 			String[] command = command.split(" ");
+			Socket socket = new Socket("127.0.0.1", 6666); // moved this outside the if (command) statements
 			if (command[0].equals("play")) {
 				try {
-					Socket socket = new Socket("127.0.0.1", 6666);
 					if (socket.isConnected()) {
-						in = new BufferedInputStream(socket.getInputStream(), 2048);
+						in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 
 						// checking that the song number is a number
 						try {
 							int song_num = (int)command[0];
 							sendHeader(socket, MessageType.PLAY, song_num);
 
+<<<<<<< HEAD
 							// keep calling getMessage until 
 							while (getMessage(socket));
 							
 								//serverSocket.close();
+=======
+							Header hdr = new Header();
+							hdr.song_num = song_num;
+							hdr.type = PLAY;
+
+							// put the header in a buffer and send it
+							// QUESTION: how do we send a message?
+
+							// we wait to receive a message from server with the byte size of the song
+							// continue receiving until the recv_count is equal to ^^
+							// utilize 'in'?
+
+>>>>>>> 5e58157d8f8a31a642490980ee0fd7d677fa122b
 						} catch (Exception e) {
 							System.out.println(e);
 						}
-
 
 						player = new Thread(new AudioPlayerThread(in));
 						player.start();
