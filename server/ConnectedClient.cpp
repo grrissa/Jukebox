@@ -223,6 +223,7 @@ void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 		this->list_response(epoll_fd, dir)
 
 	}else if (hdr->type == STOP) {
+		// signal connected client flag to stop sending
 		this->stop_response(epoll_fd)
 
 	}else if (hdr->type == DISCONNECT) {
