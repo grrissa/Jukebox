@@ -55,12 +55,18 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 		this->state = SENDING;
 		this->sender = array_sender;
 
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, server_socket, &server_ev) == -1) {
-			perror("epoll_ctl");
-			exit(1);
-		}
-		
-	}
+		// QUESTION
+		struct epoll_event epoll_out;
+        epoll_out.data.fd = this->client_fd;
+        epoll_out.events = EPOLLOUT;
+
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
+            perror("send_dummy_response epoll_ctl");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+
 	else {
 		// Sent everything with no problem so we are done with our ArraySender
 		// object.
@@ -69,8 +75,13 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 }
 
 void ConnectedClient::handle_input(int epoll_fd) {
+	// QUESTION: so this is the driver... we are doing all of the receiving in here and
+	// then calling send dummy to send the actual data that theyre req?????? how do we pass that data onto send dummy 
+	// should we create a function for each request type from the client
+
 	cout << "Ready to read from client " << this->client_fd << "\n";
 	char data[1024];
+	Header* hdr = (Header*)data;    
 	// added
 
 	// until here
@@ -91,6 +102,25 @@ void ConnectedClient::handle_input(int epoll_fd) {
 	// list of songs or for you to send them a song?)
 	// For now, the following function call just demonstrates how you might
 	// send data.
+
+	if (hdr->type == PLAY){
+        // this->play_response(epoll_fd)
+		// from the CLIENT SIDE... is it just going to play the song even if it hasnt received eerything?
+		// how do we implement the STOP... inside play reponse going to wait for a stop to stop sending chunks? how does this work
+    } else if (hdr->type == INFO) {
+		// this->info_response(epoll_fd)
+	} else if (hdr->type == LIST) {
+		// this->list_response(epoll_fd)
+
+	}else if (hdr->type == STOP) {
+		// this->stop_response(epoll_fd)
+
+	}else if (hdr->type == DISCONNECT) {
+		// this->disconnect
+
+	}
+
+	// QUESTION: just want to make sure we odn't have to send eveything from this. this is j a placeholder
 	this->send_dummy_response(epoll_fd);
 }
 

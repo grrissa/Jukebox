@@ -8,7 +8,7 @@ enum ClientState { RECEIVING, SENDING };
 /**
  * Represents the message types sent and received in connected client.
  */
-enum MessageType  {PLAY, INFO, LIST, STOP, BAD_REQ, SONG_LEN, INFO_DATA, LIST_DATA};
+enum MessageType  {PLAY, INFO, LIST, STOP, DISCONNECT, BAD_REQ, SONG_LEN, INFO_DATA, LIST_DATA};
 
 struct Header {
 	MessageType type;
