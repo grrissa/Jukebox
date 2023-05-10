@@ -45,8 +45,8 @@ public class AudioClient {
 
 		while (true) {
 			System.out.print(">> ");
-			String command = s.nextLine();
-			String[] command = command.split(" ");
+			String c = s.nextLine();
+			String[] command = c.split(" ");
 			Socket socket = new Socket("127.0.0.1", 6666); // moved this outside the if (command) statements
 			if (command[0].equals("play")) {
 				try {
@@ -55,7 +55,7 @@ public class AudioClient {
 
 						// checking that the song number is a number
 						try {
-							int song_num = (int)command[0];
+							int song_num = Integer.parseInt(command[0]);
 							sendHeader(socket, MessageType.PLAY, song_num);
 
 							// keep calling getMessage until 

@@ -343,6 +343,7 @@ void event_loop(int epoll_fd, int server_socket) {
 				 * You'll therefore need to continue sending whatever response
 				 * you had in progress.
 				 */
+				//clients[events[n].data.fd].new_fun(epoll_fd);
 				// TODO: Create a new function in your ConnectedClient class
 				// and call that here, sort of like what was done for
 				// handle_input and handle_close earlier in this function.
