@@ -74,7 +74,114 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	}
 }
 
-void ConnectedClient::handle_input(int epoll_fd) {
+void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir) {
+	// REMEMBER: first send the amnt of bytes that the song is going to be
+
+	// HELLO: figure out how to retrieve song (this is dummy)
+	int song_num_bytes = 0;
+
+	// send the song length
+	char segment[sizeof(Header)];
+	memset(segment, 0, sizeof(Header));
+	Header* hdr = (RDTHeader*)segment;
+
+	hdr1->type = SONG_LEN;
+	hdr->song_num = htonl(song_num_bytes);
+
+	// QUESTION: is this sock_fd.. or epoll_fd?
+	if (send(this->sock_fd, segment, sizeof(Header), 0) < 0) {
+		perror("sending song length");
+		exit(EXIT_FAILURE);
+	}
+
+
+	// send the song in chunks
+	char *song_data = new char[song_num_bytes];
+	memset(song_data, 0, song_num_bytes);
+
+	// HELLO: REMEMBER THIS WILL HCNAGE TO FILE SENDER (where do we define this?)
+	ArraySender *array_sender = new ArraySender(song_data, song_num_bytes);
+	delete[] song_data; // The ArraySender creates its own copy of the data so let's delete this copy
+
+	ssize_t num_bytes_sent;
+	ssize_t total_bytes_sent = 0;
+
+	// keep sending the next chunk until it says we either didn't send
+	// anything (0 return indicates nothing left to send) or until we can't
+	// send anymore because of a full socket buffer (-1 return value)
+	while((num_bytes_sent = array_sender->send_next_chunk(this->client_fd)) > 0) {
+		total_bytes_sent += num_bytes_sent;
+	}
+	cout << "sent " << total_bytes_sent << " bytes to client\n";
+
+	// if theres a full socket buffer
+	if (num_bytes_sent < 0) {
+		// Fill this in with the three steps listed in the comment above.
+		// WARNING: Do NOT delete array_sender here (you'll need it to continue
+		// sending later).
+		this->state = SENDING;
+		this->sender = array_sender;
+
+		// QUESTION
+		struct epoll_event epoll_out;
+        epoll_out.data.fd = this->client_fd;
+        epoll_out.events = EPOLLOUT;
+
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
+            perror("send_dummy_response epoll_ctl");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+		// Sent everything with no problem so we are done with our ArraySender
+		// object.
+		delete array_sender;
+	}
+
+}
+
+void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir) {
+
+	// figure out how to get the info into a char array...
+	char *info_data = new char[1400];
+
+	// now actually making a INFO_DATA message
+	char segment[sizeof(Header) + 1400];
+	memset(segment, 0, sizeof(Header) + 1400);
+	Header* hdr = (RDTHeader*)segment;
+
+	hdr->type = INFO_DATA;
+
+	memcpy(segment, info_data, 1400); // this is copying data into the messsage
+	
+	// QUESTION: is this sock_fd.. or epoll_fd?
+	if (send(this->sock_fd, segment, sizeof(Header) + 1400, 0) < 0) {
+		perror("sending song info");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void ConnectedClient::list_response(int epoll_fd, int song_num, const char *dir) {
+
+	// figure out how to get the info into a char array...
+	char *info_data = new char[1400];
+
+	// now actually making a INFO_DATA message
+	char segment[sizeof(Header) + 1400];
+	memset(segment, 0, sizeof(Header) + 1400);
+	Header* hdr = (RDTHeader*)segment;
+
+	hdr->type = INFO_DATA;
+
+	memcpy(segment, info_data, 1400); // this is copying data into the messsage
+	
+	// QUESTION: is this sock_fd.. or epoll_fd?
+	if (send(this->sock_fd, segment, sizeof(Header) + 1400, 0) < 0) {
+		perror("sending song info");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 	// QUESTION: so this is the driver... we are doing all of the receiving in here and
 	// then calling send dummy to send the actual data that theyre req?????? how do we pass that data onto send dummy 
 	// should we create a function for each request type from the client
@@ -104,25 +211,30 @@ void ConnectedClient::handle_input(int epoll_fd) {
 	// send data.
 
 	if (hdr->type == PLAY){
-        // this->play_response(epoll_fd)
+
+		// QUESTION: will we have to ntohl/htonl?
+        this->play_response(epoll_fd, hdr->song_num, dir)
 		// from the CLIENT SIDE... is it just going to play the song even if it hasnt received eerything?
 		// how do we implement the STOP... inside play reponse going to wait for a stop to stop sending chunks? how does this work
+
     } else if (hdr->type == INFO) {
-		// this->info_response(epoll_fd)
+		this->info_response(epoll_fd, dir)
 	} else if (hdr->type == LIST) {
-		// this->list_response(epoll_fd)
+		this->list_response(epoll_fd, dir)
 
 	}else if (hdr->type == STOP) {
-		// this->stop_response(epoll_fd)
+		this->stop_response(epoll_fd)
 
 	}else if (hdr->type == DISCONNECT) {
-		// this->disconnect
+		this->handle_close(epoll_fd)
 
 	}
 
 	// QUESTION: just want to make sure we odn't have to send eveything from this. this is j a placeholder
 	this->send_dummy_response(epoll_fd);
 }
+
+
 
 
 // You likely should not need to modify this function.

@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	event_loop(epoll_fd, serv_sock);
+	event_loop(epoll_fd, serv_sock, argv[2]);
 }
 
 /**
@@ -287,7 +287,7 @@ void setup_new_client(int server_socket,
  * @param epoll_fd File descriptor for our epoll.
  * @param server_socket Socket that is listening for connections.
  */
-void event_loop(int epoll_fd, int server_socket) {
+void event_loop(int epoll_fd, int server_socket, const char *dir) {
 	// associate client's file descriptor with its ConnectedClient object
 	map<int, ConnectedClient> clients;
 
@@ -329,7 +329,7 @@ void event_loop(int epoll_fd, int server_socket) {
 					 * client that has sent us data so we can receive it now
 					 * without worrying about blocking.
 					 */
-					clients[events[n].data.fd].handle_input(epoll_fd);
+					clients[events[n].data.fd].handle_input(epoll_fd, dir);
 				}
             }
 

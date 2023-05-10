@@ -52,11 +52,58 @@ class ConnectedClient {
 	void send_dummy_response(int epoll_fd);
 
 	/**
+	 * Sends a response to the client.
+	 * Note that this is just to demonstrate sending to the client: it doesn't
+	 * send anything intelligent.
+	 *
+	 * @param epoll_fd File descriptor for epoll.
+	 */
+	void play_response(int epoll_fd, int song_num, const char *dir);
+
+	/**
+	 * Sends a response to the client.
+	 * Note that this is just to demonstrate sending to the client: it doesn't
+	 * send anything intelligent.
+	 *
+	 * @param epoll_fd File descriptor for epoll.
+	 */
+	void info_response(int epoll_fd, int song_num, const char *dir);
+
+	/**
+	 * Sends a response to the client.
+	 * Note that this is just to demonstrate sending to the client: it doesn't
+	 * send anything intelligent.
+	 *
+	 * @param epoll_fd File descriptor for epoll.
+	 */
+	void list_response(int epoll_fd, const char *dir);
+
+	/**
+	 * Sends a response to the client.
+	 * Note that this is just to demonstrate sending to the client: it doesn't
+	 * send anything intelligent.
+	 *
+	 * @param epoll_fd File descriptor for epoll.
+	 */
+	void stop_response(int epoll_fd);
+
+	/**
+	 * Sends a response to the client.
+	 * Note that this is just to demonstrate sending to the client: it doesn't
+	 * send anything intelligent.
+	 *
+	 * @param epoll_fd File descriptor for epoll.
+	 */
+	void disconnect(int epoll_fd);
+
+
+
+	/**
 	 * Handles new input from the client.
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void handle_input(int epoll_fd);
+	void handle_input(int epoll_fd, const char *dir);
 
 	/**
 	 * Handles a close request from the client.
