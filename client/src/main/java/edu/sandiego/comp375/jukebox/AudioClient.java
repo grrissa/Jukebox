@@ -11,7 +11,7 @@ import java.util.Scanner;
 import java.lang.Exception;
 
 enum MessageType {
-  PLAY, INFO, LIST, STOP, BAD_REQ,SONG_LEN,INFO_DATA,LIST_DATA;
+  PLAY, INFO, LIST, STOP, BAD_REQ, SONG_LEN, INFO_DATA, LIST_DATA;
 
   private static final MessageType values[] = values();
 
@@ -59,8 +59,9 @@ public class AudioClient {
 							sendHeader(socket, MessageType.PLAY, song_num);
 
 							// keep calling getMessage until 
-							while (getMessage(socket));
+							while (getMessage(socket, MessageType.SONG_LEN));
 							
+
 								//serverSocket.close();
 						} catch (Exception e) {
 							System.out.println(e);
@@ -80,15 +81,39 @@ public class AudioClient {
 				// Your final solution should make sure that the exit command
 				// causes music to stop playing immediately.
 				System.out.println("Goodbye!");
+				socket.close();
 				break;
 			}
 			else if (command[0].equals("list")) {
-				
-				break;
+				sendHeader(socket, MessageType.LIST, 0);
+
+				// keep calling getMessage until 
+				while (getMessage(socket, MessageType.LIST_DATA));
+		
 			}
 			else if (command[0].equals("info")) {
-				
-				break;
+				try {
+					if (socket.isConnected()) {
+						in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
+
+						// checking that the song number is a number
+						try {
+							int song_num = Integer.parseInt(command[0]);
+							sendHeader(socket, MessageType.INFO, song_num);
+
+							// keep calling getMessage until 
+							while (getMessage(socket, MessageType.INFO_DATA));
+							
+
+								//serverSocket.close();
+						} catch (Exception e) {
+							System.out.println(e);
+						}
+					}
+				}
+				catch (Exception e) {
+					System.out.println(e);
+				}
 			}
 			else if (command[0].equals("stop")) {
 				
@@ -100,6 +125,7 @@ public class AudioClient {
 		}
 
 		System.out.println("Client: Exiting");
+		
 	}
 	/**
 	 * Creates and sends a message header.
@@ -127,42 +153,44 @@ public class AudioClient {
 		OutputStream o = s.getOutputStream();
 		o.write(header.array());
 	}
-		/**
+	/**
 	 * Reads a message from the socket.
 	 *
 	 * @param s The Socket to read data from
 	 * @return False if there are no more messages to receive. True otherwise.
 	 */
-	public static boolean getMessage(Socket s) throws IOException {
+	public static boolean getMessage(Socket s, MessageType looking_for) throws IOException {
 		DataInputStream in = new DataInputStream(s.getInputStream());
 		MessageType response_type = MessageType.get(in.readByte());
 		int data_len = in.readInt();
-
-		if (response_type == MessageType.PLAY) {
-			byte[] res = s.getInputStream().readNBytes(data_len);
-			String response_str = new String(res);
-			System.out.println(response_str);
-			return true;
+		if (response_type == looking_for) {
+			if (response_type == MessageType.SONG_LEN) {
+				byte[] res = s.getInputStream().readNBytes(data_len);
+				String response_str = new String(res);
+				System.out.println(response_str);
+				return true;
+			}
+			else if (response_type == MessageType.INFO) {
+				System.out.println("Server replied with info!");
+				return true;
+			}
+			else if (response_type == MessageType.LIST) {
+				System.out.println("Server replied with list!");
+				return true;
+			}
+			else if (response_type == MessageType.STOP) {
+				System.out.println("Server said stop the music!");
+				return true;
+			}
+			else if (response_type == MessageType.BAD_REQ) {
+				System.out.println("Server said the request was bad!");
+				return true;
+			}
+			else { // may delete this
+				// Something weird happened here...
+				return false;
+			}
 		}
-		else if (response_type == MessageType.INFO) {
-			System.out.println("Server said goodbye!");
-			return false;
-		}
-		else if (response_type == MessageType.LIST) {
-			System.out.println("Server said goodbye!");
-			return false;
-		}
-		else if (response_type == MessageType.STOP) {
-			System.out.println("Server said goodbye!");
-			return false;
-		}
-		else if (response_type == MessageType.BAD_REQ) {
-			System.out.println("Server said goodbye!");
-			return false;
-		}
-		else {
-			// Something weird happened here...
-			return false;
-		}
+		return false;
 	}
 }
