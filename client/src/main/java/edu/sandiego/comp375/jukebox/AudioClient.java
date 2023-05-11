@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Scanner;
 import java.lang.Exception;
+import java.util.stream.*;
 
 enum MessageType {
   PLAY, INFO, LIST, STOP, BAD_REQ, SONG_LEN, INFO_DATA, LIST_DATA;
@@ -48,28 +49,33 @@ public class AudioClient {
 			String c = s.nextLine();
 			String[] command = c.split(" ");
 			Socket socket = new Socket("127.0.0.1", 6666); // moved this outside the if (command) statements
-			if (command[0].equals("play")) {
+			if (command[0].equals("play")){
 				try {
-					if (socket.isConnected()) {
-						in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
+					// Runnable play = (){
+						if (socket.isConnected()) {
+							in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 
-						// checking that the song number is a number
-						try {
-							int song_num = Integer.parseInt(command[0]);
-							sendHeader(socket, MessageType.PLAY, song_num);
+							// checking that the song number is a number
+							try {
+								int song_num = Integer.parseInt(command[0]);
+								sendHeader(socket, MessageType.PLAY, song_num);
 
-							// keep calling getMessage until 
-							while (getMessage(socket, MessageType.SONG_LEN));
-							
+								// keep calling getMessage until 
+								while (getMessage(socket, MessageType.SONG_LEN));
+								
 
-								//serverSocket.close();
-						} catch (Exception e) {
-							System.out.println(e);
+									//serverSocket.close();
+							} catch (Exception e) {
+								System.out.println(e);
+							}
+
+							player = new Thread(new AudioPlayerThread(in));
+							player.start();
 						}
-
-						player = new Thread(new AudioPlayerThread(in));
-						player.start();
-					}
+					// };
+					// play.run();
+					// Thread thread - new Thread(play);
+					// thread.start();
 				}
 				catch (Exception e) {
 					System.out.println(e);
@@ -115,7 +121,7 @@ public class AudioClient {
 					System.out.println(e);
 				}
 			}
-			else if (command[0].equals("stop")) {
+			else if (command[0].equals("stop")) { // dom't worry about this for now
 				
 				break;
 			}
@@ -165,7 +171,7 @@ public class AudioClient {
 		int data_len = in.readInt();
 		if (response_type == looking_for) {
 			if (response_type == MessageType.SONG_LEN) {
-				byte[] res = s.getInputStream().readNBytes(data_len);
+				byte[] res =  s.getInputStream().readNBytes(data_len);
 				String response_str = new String(res);
 				System.out.println(response_str);
 				return true;
