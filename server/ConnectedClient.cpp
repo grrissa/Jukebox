@@ -141,8 +141,9 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
 
 void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir) {
 
-	// figure out how to get the info into a char array...
+	// so supposedly the info gets written into info data
 	char *info_data = new char[1400];
+	get_info(dir, info_data, song_num);
 
 	// now actually making a INFO_DATA message
 	char segment[sizeof(Header) + 1400];
@@ -158,6 +159,53 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir)
 		perror("sending song info");
 		exit(EXIT_FAILURE);
 	}
+}
+
+std::vector<std::string> ConnectedClient::get_songs(char *info_data){
+	// Turn the char array into a C++ string for easier processing.
+	std::string str(dir);
+    
+	std::vector<std::string> song_vector;
+    for(auto& entry: fs::directory_iterator(dir)) {
+        if (entry.is_regular_file()){
+			if (entry.path.filename().extension().c_str() == ".mp3"){
+				string song = entry.path.filename().stem().c_str(); // this will get you the file name
+				song_vector.push_back(song);
+			}	
+		}  
+    }
+
+	std::sort(song_vector.begin(), song_vector.end());
+
+	return song_vector;
+}
+
+int ConnectedClient::get_info(const char *dir, char *info_data, int song_num){
+
+	// Turn the char array into a C++ string for easier processing.
+	std::string str(dir);
+
+	std::vector<std::string> song_vector = this->get_songs(info_data);
+    
+	string info = "";
+
+	// finding the song in the directory
+	string filename = vector[song_num-1] + ".mp3.info"
+    for(auto& entry: fs::directory_iterator(dir)) {
+        if (entry.is_regular_file() && entry.path().filename() == vector[song_num-1]){
+
+			std::ifstream file(entry.path().filename(), std::ios::binary);
+			file.read(info_data, 1400); // read up to buffer_size bytes into file_data buffer
+			file.close();
+
+			return 1;
+		}            
+    }
+
+
+	// this is if we couln't find info for the requested song_num
+	return 0;
+
 }
 
 void ConnectedClient::list_response(int epoll_fd, int song_num, const char *dir) {
