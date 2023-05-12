@@ -143,7 +143,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir)
 
 	// so supposedly the info gets written into info data
 	char *info_data = new char[1400];
-	get_info(dir, info_data, song_num);
+	int valid = get_info(dir, info_data, song_num);
 
 	// now actually making a INFO_DATA message
 	char segment[sizeof(Header) + 1400];
@@ -152,7 +152,18 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir)
 
 	hdr->type = INFO_DATA;
 
-	memcpy(segment, info_data, 1400); // this is copying data into the messsage
+	memcpy(segment, info_data, 1400); // this is copying data into the messsage //HELP
+
+	// if the song does not exist send back a 0
+	if ( valid == 0 ){
+		hdr->song_num = 0;
+		if (send(this->sock_fd, segment, sizeof(Header), 0) < 0) {
+			perror("sending song info");
+			exit(EXIT_FAILURE);
+		}
+		return;
+	}
+
 	
 	// QUESTION: is this sock_fd.. or epoll_fd?
 	if (send(this->sock_fd, segment, sizeof(Header) + 1400, 0) < 0) {
@@ -161,7 +172,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir)
 	}
 }
 
-std::vector<std::string> ConnectedClient::get_songs(char *info_data){
+std::vector<std::string> ConnectedClient::get_songs(const char *dir){
 	// Turn the char array into a C++ string for easier processing.
 	std::string str(dir);
     
@@ -185,14 +196,17 @@ int ConnectedClient::get_info(const char *dir, char *info_data, int song_num){
 	// Turn the char array into a C++ string for easier processing.
 	std::string str(dir);
 
-	std::vector<std::string> song_vector = this->get_songs(info_data);
+	std::vector<std::string> song_vector = this->get_songs(dir);
+	if (song_num < 0 && song_num >= song_vector.size()){ // checking if this is a valid song_num
+		return 0;
+	}
     
 	string info = "";
 
 	// finding the song in the directory
 	string filename = vector[song_num-1] + ".mp3.info"
     for(auto& entry: fs::directory_iterator(dir)) {
-        if (entry.is_regular_file() && entry.path().filename() == vector[song_num-1]){
+        if (entry.is_regular_file() && entry.path().filename() == filename){
 
 			std::ifstream file(entry.path().filename(), std::ios::binary);
 			file.read(info_data, 1400); // read up to buffer_size bytes into file_data buffer
@@ -208,25 +222,30 @@ int ConnectedClient::get_info(const char *dir, char *info_data, int song_num){
 
 }
 
-void ConnectedClient::list_response(int epoll_fd, int song_num, const char *dir) {
+void ConnectedClient::list_response(int epoll_fd, const char *dir) {
 
-	// figure out how to get the info into a char array...
-	char *info_data = new char[1400];
+	char *list_data = new char[1400];
 
-	// now actually making a INFO_DATA message
+	// now actually making a LIST_DATA message
 	char segment[sizeof(Header) + 1400];
 	memset(segment, 0, sizeof(Header) + 1400);
 	Header* hdr = (RDTHeader*)segment;
 
-	hdr->type = INFO_DATA;
+	hdr->type = LIST_DATA;
 
-	memcpy(segment, info_data, 1400); // this is copying data into the messsage
-	
-	// QUESTION: is this sock_fd.. or epoll_fd?
-	if (send(this->sock_fd, segment, sizeof(Header) + 1400, 0) < 0) {
-		perror("sending song info");
-		exit(EXIT_FAILURE);
+	std::vector<std::string> song_vector = this->get_songs(dir);
+
+
+	// coping the list of songs into list_data
+	char *pointer = list_data
+	for (int i = 0; i < song_vector.size(); i++){
+		strcpy(pointer, song_vector[i]);
+		pointer += song_vector[i].size();
 	}
+
+
+	memcpy(list_data, hdr, 1400); // this is copying data into the messsage HELP
+
 }
 
 void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
@@ -262,21 +281,13 @@ void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 
 		// QUESTION: will we have to ntohl/htonl?
         this->play_response(epoll_fd, hdr->song_num, dir)
-		// from the CLIENT SIDE... is it just going to play the song even if it hasnt received eerything?
-		// how do we implement the STOP... inside play reponse going to wait for a stop to stop sending chunks? how does this work
 
     } else if (hdr->type == INFO) {
-		this->info_response(epoll_fd, dir)
+		this->info_response(epoll_fd, dir);
 	} else if (hdr->type == LIST) {
-		this->list_response(epoll_fd, dir)
-
-	}else if (hdr->type == STOP) {
-		// signal connected client flag to stop sending
-		this->stop_response(epoll_fd)
-
+		this->list_response(epoll_fd, dir);
 	}else if (hdr->type == DISCONNECT) {
-		this->handle_close(epoll_fd)
-
+		this->handle_close(epoll_fd);
 	}
 
 	// QUESTION: just want to make sure we odn't have to send eveything from this. this is j a placeholder
