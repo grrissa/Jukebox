@@ -105,7 +105,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void disconnect(int epoll_fd);
+	void send_message(int epoll_fd, char *message, uint32_t size);
 
 
 

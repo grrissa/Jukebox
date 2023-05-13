@@ -75,101 +75,61 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 }
 
 void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir) {
-	// REMEMBER: first send the amnt of bytes that the song is going to be
-
-	// HELLO: figure out how to retrieve song (this is dummy)
-	int song_num_bytes = 0;
 
 	// send the song length
 	char segment[sizeof(Header)];
 	memset(segment, 0, sizeof(Header));
 	Header* hdr = (RDTHeader*)segment;
-
 	hdr1->type = SONG_LEN;
+
+	std::vector<std::string> song_vector = this->get_songs(dir);
+	// if this song is not valid then just send a -1 and client tries again
+	if (song_num < 0 && song_num >= song_vector.size()){
+		hdr->song_num = -1;
+		this->send_message(epoll_fd, segment, sizeof(Header));
+		return;
+	}
+
+	std::uintmax_t song_num_bytes = 0;
+	// finding the song in the directory
+	string filename = vector[song_num-1] + ".mp3";
+    for(auto& entry: fs::directory_iterator(dir)) {
+        if (entry.is_regular_file() && entry.path().filename() == filename){			
+			song_num_bytes = fs::file_size(entry);
+		}   
+		break;         
+    }
+
 	hdr->song_num = htonl(song_num_bytes);
+	this->send_message(epoll_fd, segment, sizeof(Header));
 
-	// QUESTION: is this sock_fd.. or epoll_fd?
-	if (send(this->sock_fd, segment, sizeof(Header), 0) < 0) {
-		perror("sending song length");
-		exit(EXIT_FAILURE);
-	}
+	// this should be sending the actualy song file in chunks...
+	FileSender *file_sender = new FileSender(filename, song_num_bytes);
 
-
-	// send the song in chunks
-	char *song_data = new char[song_num_bytes];
-	memset(song_data, 0, song_num_bytes);
-
-	// HELLO: REMEMBER THIS WILL HCNAGE TO FILE SENDER (where do we define this?)
-	ArraySender *array_sender = new ArraySender(song_data, song_num_bytes);
-	delete[] song_data; // The ArraySender creates its own copy of the data so let's delete this copy
-
-	ssize_t num_bytes_sent;
-	ssize_t total_bytes_sent = 0;
-
-	// keep sending the next chunk until it says we either didn't send
-	// anything (0 return indicates nothing left to send) or until we can't
-	// send anymore because of a full socket buffer (-1 return value)
-	while((num_bytes_sent = array_sender->send_next_chunk(this->client_fd)) > 0) {
-		total_bytes_sent += num_bytes_sent;
-	}
-	cout << "sent " << total_bytes_sent << " bytes to client\n";
-
-	// if theres a full socket buffer
-	if (num_bytes_sent < 0) {
-		// Fill this in with the three steps listed in the comment above.
-		// WARNING: Do NOT delete array_sender here (you'll need it to continue
-		// sending later).
-		this->state = SENDING;
-		this->sender = array_sender;
-
-		// QUESTION
-		struct epoll_event epoll_out;
-        epoll_out.data.fd = this->client_fd;
-        epoll_out.events = EPOLLOUT;
-
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
-            perror("send_dummy_response epoll_ctl");
-            exit(EXIT_FAILURE);
-        }
-    } else {
-		// Sent everything with no problem so we are done with our ArraySender
-		// object.
-		delete array_sender;
-	}
-
+	file_sender->send_next_chunk(epoll_fd);
+	delete file_sender;
 }
+
+
+
 
 void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir) {
 
-	// so supposedly the info gets written into info data
-	char *info_data = new char[1400];
-	int valid = get_info(dir, info_data, song_num);
+	string info = get_info(dir, song_num);
 
 	// now actually making a INFO_DATA message
-	char segment[sizeof(Header) + 1400];
-	memset(segment, 0, sizeof(Header) + 1400);
+	char segment[sizeof(Header) + info.size()];
+	memset(segment, 0, sizeof(Header) + info.size());
 	Header* hdr = (RDTHeader*)segment;
 
 	hdr->type = INFO_DATA;
 
-	memcpy(segment, info_data, 1400); // this is copying data into the messsage //HELP
-
-	// if the song does not exist send back a 0
-	if ( valid == 0 ){
-		hdr->song_num = 0;
-		if (send(this->sock_fd, segment, sizeof(Header), 0) < 0) {
-			perror("sending song info");
-			exit(EXIT_FAILURE);
-		}
-		return;
+	if (info.size() == 0){
+		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
 	}
 
-	
-	// QUESTION: is this sock_fd.. or epoll_fd?
-	if (send(this->sock_fd, segment, sizeof(Header) + 1400, 0) < 0) {
-		perror("sending song info");
-		exit(EXIT_FAILURE);
-	}
+	memcpy(hdr+1, info.c_str(), info.size());
+	this->send_message(epoll_fd, segment, sizeof(Header) + info.size());
 }
 
 std::vector<std::string> ConnectedClient::get_songs(const char *dir){
@@ -191,60 +151,56 @@ std::vector<std::string> ConnectedClient::get_songs(const char *dir){
 	return song_vector;
 }
 
-int ConnectedClient::get_info(const char *dir, char *info_data, int song_num){
+string ConnectedClient::get_info(const char *dir, int song_num){
 
 	// Turn the char array into a C++ string for easier processing.
 	std::string str(dir);
 
 	std::vector<std::string> song_vector = this->get_songs(dir);
 	if (song_num < 0 && song_num >= song_vector.size()){ // checking if this is a valid song_num
-		return 0;
+		return "";
 	}
-    
-	string info = "";
 
 	// finding the song in the directory
-	string filename = vector[song_num-1] + ".mp3.info"
+	string filename = vector[song_num-1] + ".mp3.info";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){
-
-			std::ifstream file(entry.path().filename(), std::ios::binary);
-			file.read(info_data, 1400); // read up to buffer_size bytes into file_data buffer
+			
+			// reading the file into string info
+			std::ifstream file(entry.path().filename());
+			string info((std::istreambuf_iterator<char>(file)),
+						 std::istreambuf_iterator<char>());
 			file.close();
 
-			return 1;
+			return info;
 		}            
     }
 
-
 	// this is if we couln't find info for the requested song_num
-	return 0;
+	return "";
 
 }
 
 void ConnectedClient::list_response(int epoll_fd, const char *dir) {
 
-	char *list_data = new char[1400];
-
-	// now actually making a LIST_DATA message
-	char segment[sizeof(Header) + 1400];
-	memset(segment, 0, sizeof(Header) + 1400);
-	Header* hdr = (RDTHeader*)segment;
-
-	hdr->type = LIST_DATA;
-
+	string list_data = "";
 	std::vector<std::string> song_vector = this->get_songs(dir);
 
-
 	// coping the list of songs into list_data
-	char *pointer = list_data
 	for (int i = 0; i < song_vector.size(); i++){
-		strcpy(pointer, song_vector[i]);
-		pointer += song_vector[i].size();
+		list_data += song_vector[i];
+		list_data += "\n";
 	}
 
+	// now actually making a LIST_DATA message
+	char segment[sizeof(Header) + list_data.size()];
+	memset(segment, 0, sizeof(Header) + list_data.size());
+	Header* hdr = (RDTHeader*)segment;
+	hdr->type = LIST_DATA;
 
-	memcpy(list_data, hdr, 1400); // this is copying data into the messsage HELP
+	memcpy(hdr + 1, list_data, list_data.size()); // this is copying data into the messsage HELP
+
+	this->send_message(epoll_fd, segment, sizeof(Header) + list_data.size());
 
 }
 
@@ -256,9 +212,8 @@ void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 	cout << "Ready to read from client " << this->client_fd << "\n";
 	char data[1024];
 	Header* hdr = (Header*)data;    
-	// added
-
-	// until here
+	
+	this->state = RECEIVING;
 	ssize_t bytes_received = recv(this->client_fd, data, 1024, 0);
 	if (bytes_received < 0) {
 		perror("client_read recv");
@@ -270,12 +225,6 @@ void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 		cout << data[i];
 
 	cout << "\n";
-
-	// TODO: Eventually you need to actually look at the response and send a
-	// response based on what you got from the client (e.g. did they ask for a
-	// list of songs or for you to send them a song?)
-	// For now, the following function call just demonstrates how you might
-	// send data.
 
 	if (hdr->type == PLAY){
 
@@ -289,10 +238,53 @@ void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 	}else if (hdr->type == DISCONNECT) {
 		this->handle_close(epoll_fd);
 	}
-
-	// QUESTION: just want to make sure we odn't have to send eveything from this. this is j a placeholder
-	this->send_dummy_response(epoll_fd);
 }
+
+void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
+	// if (send(this->sock_fd, message, size, 0) < 0) {
+	// 		perror("sending a message");
+	// 		exit(EXIT_FAILURE);
+	// }
+
+	ArraySender *array_sender = new ArraySender(message, size);
+	delete[] message; // The ArraySender creates its own copy of the data so let's delete this copy
+
+	ssize_t num_bytes_sent;
+	ssize_t total_bytes_sent = 0;
+
+	// keep sending the next chunk until it says we either didn't send
+	// anything (0 return indicates nothing left to send) or until we can't
+	// send anymore because of a full socket buffer (-1 return value)
+	while((num_bytes_sent = array_sender->send_next_chunk(epoll_fd)) > 0) {
+		total_bytes_sent += num_bytes_sent;
+	}
+	cout << "sent " << total_bytes_sent << " bytes to client\n";
+
+	if (num_bytes_sent < 0) {
+
+		this->state = SENDING;
+		this->sender = array_sender;
+
+		// QUESTION
+		struct epoll_event epoll_out;
+        epoll_out.data.fd = this->client_fd;
+        epoll_out.events = EPOLLOUT;
+
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
+            perror("sending message");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+
+	else {
+		// Sent everything with no problem so we are done with our ArraySender
+		// object.
+		delete array_sender;
+	}
+}
+
+
 
 
 
