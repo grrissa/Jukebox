@@ -189,6 +189,7 @@ void ConnectedClient::list_response(int epoll_fd, const char *dir) {
 
 	// coping the list of songs into list_data
 	for (int i = 0; i < (int)song_vector.size(); i++){
+		list_data += std:to_str(i) + " - "
 		list_data += song_vector[i];
 		list_data += "\n";
 	}
