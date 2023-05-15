@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cerrno>
 #include <cstdio>
+#include <string>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -55,13 +56,13 @@ ssize_t ArraySender::send_next_chunk(int sock_fd) {
 
 
 
-FileSender::FileSender(string filename, size_t size) {
+FileSender::FileSender(std::string filename, size_t size) {
 	std::ifstream file(filename, std::ios::binary);
 	this->file = file;
 	this->file_size = size;
 }
 
-void FileSender::send_next_chunk(int sock_fd) {
+void FileSender::send_song_chunk(int sock_fd) {
 
     const unsigned int buffer_size = 4096;
     char file_data[buffer_size];

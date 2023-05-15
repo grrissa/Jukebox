@@ -51,7 +51,7 @@ int accept_connection(int server_socket);
 int setup_server_socket(uint16_t port_num);
 void set_non_blocking(int sock);
 int find_mp3_files(const char *dir);
-void event_loop(int epoll_fd, int server_socket);
+void event_loop(int epoll_fd, int server_socket, const char *dir);
 
 int main(int argc, char **argv) {
     if (argc != 3) {

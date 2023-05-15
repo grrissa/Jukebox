@@ -12,6 +12,7 @@
 
 using std::cout;
 using std::cerr;
+using std::string;
 
 ConnectedClient::ConnectedClient(int fd, ClientState initial_state) :
 	client_fd(fd), sender(NULL), state(initial_state) {}
@@ -79,12 +80,12 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
 	// send the song length
 	char segment[sizeof(Header)];
 	memset(segment, 0, sizeof(Header));
-	Header* hdr = (RDTHeader*)segment;
-	hdr1->type = SONG_LEN;
+	Header* hdr = (Header*)segment;
+	hdr->type = SONG_LEN;
 
 	std::vector<std::string> song_vector = this->get_songs(dir);
 	// if this song is not valid then just send a -1 and client tries again
-	if (song_num < 0 && song_num >= song_vector.size()){
+	if (song_num < 0 && song_num >= (int)song_vector.size()){
 		hdr->song_num = -1;
 		this->send_message(epoll_fd, segment, sizeof(Header));
 		return;
@@ -106,7 +107,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
 	// this should be sending the actualy song file in chunks...
 	FileSender *file_sender = new FileSender(filename, song_num_bytes);
 
-	file_sender->send_next_chunk(epoll_fd);
+	file_sender->send_song_chunk(epoll_fd);
 	delete file_sender;
 }
 
@@ -115,12 +116,12 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
 
 void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir) {
 
-	string info = get_info(dir, song_num);
+	string info = this->get_info(dir, song_num);
 
 	// now actually making a INFO_DATA message
 	char segment[sizeof(Header) + info.size()];
 	memset(segment, 0, sizeof(Header) + info.size());
-	Header* hdr = (RDTHeader*)segment;
+	Header* hdr = (Header*)segment;
 
 	hdr->type = INFO_DATA;
 
@@ -184,10 +185,10 @@ string ConnectedClient::get_info(const char *dir, int song_num){
 void ConnectedClient::list_response(int epoll_fd, const char *dir) {
 
 	string list_data = "";
-	std::vector<std::string> song_vector = this->get_songs(dir);
+	std::vector<std::string> song_vector = this->get_songs((char *)dir);
 
 	// coping the list of songs into list_data
-	for (int i = 0; i < song_vector.size(); i++){
+	for (int i = 0; i < (int)song_vector.size(); i++){
 		list_data += song_vector[i];
 		list_data += "\n";
 	}
@@ -195,7 +196,7 @@ void ConnectedClient::list_response(int epoll_fd, const char *dir) {
 	// now actually making a LIST_DATA message
 	char segment[sizeof(Header) + list_data.size()];
 	memset(segment, 0, sizeof(Header) + list_data.size());
-	Header* hdr = (RDTHeader*)segment;
+	Header* hdr = (Header*)segment;
 	hdr->type = LIST_DATA;
 
 	memcpy(hdr + 1, list_data, list_data.size()); // this is copying data into the messsage HELP
@@ -229,10 +230,10 @@ void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 	if (hdr->type == PLAY){
 
 		// QUESTION: will we have to ntohl/htonl?
-        this->play_response(epoll_fd, hdr->song_num, dir)
+        this->play_response(epoll_fd, hdr->song_num, dir);
 
     } else if (hdr->type == INFO) {
-		this->info_response(epoll_fd, dir);
+		this->info_response(epoll_fd, hdr->song_num, dir);
 	} else if (hdr->type == LIST) {
 		this->list_response(epoll_fd, dir);
 	}else if (hdr->type == DISCONNECT) {

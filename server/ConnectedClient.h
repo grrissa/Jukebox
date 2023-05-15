@@ -1,6 +1,9 @@
 #ifndef CONNECTEDCLIENT_H
 #define CONNECTEDCLIENT_H
 
+#include <vector>
+
+
 /**
  * Represents the state of a connected client.
  */
@@ -76,7 +79,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	int get_info(const char *dir, char *info_data);
+	std::string get_info(const char *dir, char *info_data);
 
 	std::vector<std::string> get_songs(char *info_data);
 

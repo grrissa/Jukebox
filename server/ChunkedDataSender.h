@@ -2,6 +2,7 @@
 #define CHUNKEDDATASENDER_H
 
 #include <cstddef>
+#include <fstream>
 
 const size_t CHUNK_SIZE = 4096;
 
@@ -66,7 +67,7 @@ class FileSender : public virtual ChunkedDataSender {
 	/**
 	 * Constructor for FileSender class.
 	 */
-	FileSender(string filename, size_t file_size);
+	FileSender(std::string filename, size_t file_size);
 
 	/**
 	 * Destructor for ArraySender class.
@@ -84,7 +85,7 @@ class FileSender : public virtual ChunkedDataSender {
 	 * @return -1 if we couldn't send because of a full socket buffer,
 	 * 	otherwise the number of bytes actually sent over the socket.
 	 */
-	virtual void send_next_chunk(int sock_fd);
+	void send_song_chunk(int sock_fd);
 };
 
 #endif // CHUNKEDDATASENDER_H
