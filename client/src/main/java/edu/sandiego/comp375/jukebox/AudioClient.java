@@ -170,6 +170,10 @@ public class AudioClient {
 		int data_len = in.readInt();
 		if (response_type == looking_for) {
 			if (response_type == MessageType.SONG_LEN) {
+				if (data_len == -1){
+					System.out.println("Song number is invalid. ");
+					return true;
+				}
 				byte[] res =  s.getInputStream().readNBytes(data_len);
 				String response_str = new String(res);
 				System.out.println(response_str);
@@ -177,10 +181,16 @@ public class AudioClient {
 			}
 			else if (response_type == MessageType.INFO) {
 				System.out.println("Server replied with info!");
+				byte[] res =  s.getInputStream().readAllBytes();
+				String response_str = new String(res);
+				System.out.println(response_str);
 				return true;
 			}
 			else if (response_type == MessageType.LIST) {
 				System.out.println("Server replied with list!");
+				byte[] res =  s.getInputStream().readAllBytes();
+				String response_str = new String(res);
+				System.out.println(response_str);
 				return true;
 			}
 			else if (response_type == MessageType.BAD_REQ) {
