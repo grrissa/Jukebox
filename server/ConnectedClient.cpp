@@ -59,7 +59,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 		// QUESTION
 		struct epoll_event epoll_out;
         epoll_out.data.fd = this->client_fd;
-        epoll_out.events = EPOLLOUT;
+        epoll_out.events = EPOLLOUT  | EPOLLRDHUP;
 
         if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
             perror("send_dummy_response epoll_ctl");

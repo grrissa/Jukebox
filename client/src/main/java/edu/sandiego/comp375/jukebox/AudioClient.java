@@ -43,39 +43,39 @@ public class AudioClient {
 		Thread player = null;
 
 		System.out.println("Client: Connecting to localhost (127.0.0.1) port 6666");
-
+		Socket socket = new Socket("127.0.0.1", 6666); // moved this outside the if (command) statements
+		in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 		while (true) {
 			System.out.print(">> ");
 			String c = s.nextLine();
 			String[] command = c.split(" ");
-			Socket socket = new Socket("127.0.0.1", 6666); // moved this outside the if (command) statements
+			
 			if (command[0].equals("play")){
 				try {
-					// Runnable play = (){
-						if (socket.isConnected()) {
-							in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
-
-							// checking that the song number is a number
-							try {
-								int song_num = Integer.parseInt(command[0]);
-								sendHeader(socket, MessageType.PLAY, song_num);
-
-								// keep calling getMessage until 
-								while (getMessage(socket, MessageType.SONG_LEN));
-								
-
-									//serverSocket.close();
-							} catch (Exception e) {
-								System.out.println(e);
-							}
-
-							player = new Thread(new AudioPlayerThread(in));
-							player.start();
+					if (socket.isConnected()) {
+						// checking that the song number is a number
+						if (player.isAlive()){
+							player.stop(); // stop music
+							// reset socket and input stream
+							socket = new Socket("127.0.0.1", 6666);
+							in = new BufferedInputStream(socket.getInputStream(), 2048);
 						}
-					// };
-					// play.run();
-					// Thread thread - new Thread(play);
-					// thread.start();
+						try {
+							int song_num = Integer.parseInt(command[0]);
+							sendHeader(socket, MessageType.PLAY, song_num);
+
+							// keep calling getMessage until 
+							while (getMessage(socket, MessageType.SONG_LEN));
+							
+
+								//serverSocket.close();
+						} catch (Exception e) {
+							System.out.println(e);
+						}
+
+						player = new Thread(new AudioPlayerThread(in));
+						player.start();
+					}
 				}
 				catch (Exception e) {
 					System.out.println(e);
@@ -121,12 +121,23 @@ public class AudioClient {
 					System.out.println(e);
 				}
 			}
+			else if (command[0].equals("stop")){
+				try{
+					player.stop(); // stop music
+					// reset socket and input stream
+					socket = new Socket("127.0.0.1", 6666);
+					in = new BufferedInputStream(socket.getInputStream(), 2048);
+				} catch (Exception e){
+					System.out.println("No music is playing!");
+				}
+			}
 			else {
 				System.err.println("ERROR: unknown command");
 			}
 		}
 
 		System.out.println("Client: Exiting");
+		socket.close();
 		
 	}
 	/**
@@ -161,10 +172,7 @@ public class AudioClient {
 	 * @param s The Socket to read data from
 	 * @return False if there are no more messages to receive. True otherwise.
 	 */
-	public static boolean getMessage(Socket s, MessageType looking_for) throws IOException {
-		Thread read = new Thread();
-		read.run();
-		
+	public static boolean getMessage(Socket s, MessageType looking_for) throws IOException {		
 		DataInputStream in = new DataInputStream(s.getInputStream());
 		MessageType response_type = MessageType.get(in.readByte());
 		int data_len = in.readInt();
