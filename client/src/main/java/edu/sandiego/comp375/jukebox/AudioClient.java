@@ -12,7 +12,7 @@ import java.lang.Exception;
 import java.util.stream.*;
 
 enum MessageType {
-  PLAY, INFO, LIST, STOP, BAD_REQ, SONG_LEN, INFO_DATA, LIST_DATA;
+  PLAY, INFO, LIST, BAD_REQ, SONG_LEN, INFO_DATA, LIST_DATA;
 
   private static final MessageType values[] = values();
 
@@ -63,6 +63,7 @@ public class AudioClient {
 								// keep calling getMessage until 
 								while (getMessage(socket, MessageType.SONG_LEN));
 								
+
 									//serverSocket.close();
 							} catch (Exception e) {
 								System.out.println(e);
@@ -120,10 +121,6 @@ public class AudioClient {
 					System.out.println(e);
 				}
 			}
-			else if (command[0].equals("stop")) { // dom't worry about this for now
-				
-				break;
-			}
 			else {
 				System.err.println("ERROR: unknown command");
 			}
@@ -165,15 +162,14 @@ public class AudioClient {
 	 * @return False if there are no more messages to receive. True otherwise.
 	 */
 	public static boolean getMessage(Socket s, MessageType looking_for) throws IOException {
+		Thread read = new Thread();
+		read.run();
+		
 		DataInputStream in = new DataInputStream(s.getInputStream());
 		MessageType response_type = MessageType.get(in.readByte());
 		int data_len = in.readInt();
 		if (response_type == looking_for) {
 			if (response_type == MessageType.SONG_LEN) {
-				if (data_len == -1){
-					System.out.println("Song number does not exist.");
-					return true;
-				}
 				byte[] res =  s.getInputStream().readNBytes(data_len);
 				String response_str = new String(res);
 				System.out.println(response_str);
@@ -181,16 +177,10 @@ public class AudioClient {
 			}
 			else if (response_type == MessageType.INFO) {
 				System.out.println("Server replied with info!");
-				byte[] res =  s.getInputStream().readAllBytes();
-				String response_str = new String(res);
-				System.out.println(response_str);
 				return true;
 			}
 			else if (response_type == MessageType.LIST) {
 				System.out.println("Server replied with list!");
-				byte[] res =  s.getInputStream().readAllBytes();
-				String response_str = new String(res);
-				System.out.println(response_str);
 				return true;
 			}
 			else if (response_type == MessageType.BAD_REQ) {
