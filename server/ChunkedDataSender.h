@@ -73,8 +73,7 @@ class FileSender : public virtual ChunkedDataSender {
 	 * Destructor for ArraySender class.
 	 */
 	~FileSender() {
-		return;
-			// QUESTION: WHAT SHOULD I DO W THIS
+		file.close();
 	}
 
 	/**
@@ -85,7 +84,7 @@ class FileSender : public virtual ChunkedDataSender {
 	 * @return -1 if we couldn't send because of a full socket buffer,
 	 * 	otherwise the number of bytes actually sent over the socket.
 	 */
-	void send_song_chunk(int sock_fd);
+	virtual ssize_t send_next_chunk(int sock_fd);
 };
 
 #endif // CHUNKEDDATASENDER_H

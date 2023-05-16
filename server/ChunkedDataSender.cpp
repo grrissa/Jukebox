@@ -57,22 +57,31 @@ ssize_t ArraySender::send_next_chunk(int sock_fd) {
 
 
 FileSender::FileSender(std::string filename, size_t size) {
-	std::ifstream file(filename, std::ios::binary);
-	this->file = file;
+	std::ifstream this->file(filename, std::ios::binary);
 	this->file_size = size;
 }
 
-void FileSender::send_song_chunk(int sock_fd) {
+virtual ssize_t FileSender::send_song_chunk(int sock_fd) {
 
-    const unsigned int buffer_size = 4096;
-    char file_data[buffer_size];
 
     // keep reading while we haven't reached the end of the file (EOF)
     while (!this->file.eof()) {
-        this->file.read(file_data, buffer_size); // read up to buffer_size bytes into file_data buffer
+
+		// Create the chunk and copy the data over from the appropriate
+		// location in the array
+		char chunk[CHUNK_SIZE];
+		this->file.read(file_data, buffer_size); // read up to buffer_size bytes into file_data buffer
+		memcpy(chunk, *chunk, CHUNK_SIZE);
+
+
+
+
+
+        
         int bytes_read = this->file.gcount();
         
         sendData(client_sock, file_data, bytes_read);
     }
-    this->file.close();
+
+
 }
