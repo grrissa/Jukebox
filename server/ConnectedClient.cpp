@@ -104,11 +104,36 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
 	hdr->song_num = htonl(song_num_bytes);
 	this->send_message(epoll_fd, segment, sizeof(Header));
 
+
+
+
 	// this should be sending the actualy song file in chunks...
 	FileSender *file_sender = new FileSender(filename, song_num_bytes);
+	while((num_bytes_sent = file_sender->send_next_chunk(epoll_fd)) > 0) {
+		total_bytes_sent += num_bytes_sent;
+	}
+	cout << "sent " << total_bytes_sent << " bytes to client\n";
 
-	file_sender->send_song_chunk(epoll_fd);
-	delete file_sender;
+	if (num_bytes_sent < 0) {
+
+		this->state = SENDING;
+		this->sender = file_sender;
+
+		// QUESTION
+		struct epoll_event epoll_out;
+        epoll_out.data.fd = this->client_fd;
+        epoll_out.events = EPOLLOUT;
+
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
+            perror("sending message");
+            exit(EXIT_FAILURE);
+        }
+    }
+	else {
+		// Sent everything with no problem so we are done with our FileSender
+		// object.
+		delete file_sender;
+	}
 }
 
 
@@ -200,7 +225,7 @@ void ConnectedClient::list_response(int epoll_fd, const char *dir) {
 	Header* hdr = (Header*)segment;
 	hdr->type = LIST_DATA;
 
-	memcpy(hdr + 1, list_data, list_data.size()); // this is copying data into the messsage HELP
+	memcpy(hdr + 1, list_data.c_str(), list_data.size()); // this is copying data into the messsage HELP
 
 	this->send_message(epoll_fd, segment, sizeof(Header) + list_data.size());
 
@@ -243,10 +268,6 @@ void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 }
 
 void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
-	// if (send(this->sock_fd, message, size, 0) < 0) {
-	// 		perror("sending a message");
-	// 		exit(EXIT_FAILURE);
-	// }
 
 	ArraySender *array_sender = new ArraySender(message, size);
 	delete[] message; // The ArraySender creates its own copy of the data so let's delete this copy
@@ -277,8 +298,6 @@ void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
             exit(EXIT_FAILURE);
         }
     }
-
-
 	else {
 		// Sent everything with no problem so we are done with our ArraySender
 		// object.

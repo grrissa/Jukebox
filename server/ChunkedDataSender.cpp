@@ -63,25 +63,30 @@ FileSender::FileSender(std::string filename, size_t size) {
 
 virtual ssize_t FileSender::send_song_chunk(int sock_fd) {
 
-
     // keep reading while we haven't reached the end of the file (EOF)
     while (!this->file.eof()) {
 
 		// Create the chunk and copy the data over from the appropriate
 		// location in the array
 		char chunk[CHUNK_SIZE];
-		this->file.read(file_data, buffer_size); // read up to buffer_size bytes into file_data buffer
-		memcpy(chunk, *chunk, CHUNK_SIZE);
+		this->file.read(chunk, CHUNK_SIZE); // read up to buffer_size bytes into file_data buffer
+		
+		ssize_t num_bytes_sent = send(sock_fd, chunk, bytes_in_chunk, 0);
 
+		if (num_bytes_sent > 0){
+			return num_bytes_sent;
+		}
+		else if (num_bytes_sent < 0 && errno == EAGAIN){
+			return -1;
+		}
+		else {
+			perror("send_next_chunk send");
+			exit(EXIT_FAILURE);
+		}
 
-
-
-
-        
-        int bytes_read = this->file.gcount();
-        
-        sendData(client_sock, file_data, bytes_read);
     }
+
+	return 0;
 
 
 }
