@@ -45,7 +45,7 @@ ssize_t ArraySender::send_next_chunk(int sock_fd) {
 		}
 		else {
 			// Send had an error which we didn't expect, so exit the program.
-			perror("send_next_chunk send");
+			perror("send_next_chunk send in array sender");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -62,14 +62,7 @@ FileSender::FileSender(std::string filename, size_t size) {
 	this->file_size = size;
 }
 
-<<<<<<< HEAD
-void FileSender::send_next_chunk(int sock_fd) {
-
-    const unsigned int buffer_size = 4096;
-    char file_data[buffer_size];
-=======
 ssize_t FileSender::send_next_chunk(int sock_fd) {
->>>>>>> a47cabeb371ccd96c9adf8a9df935a42df8cc1a6
 
     // keep reading while we haven't reached the end of the file (EOF)
     while (!this->file.eof()) {
@@ -88,7 +81,7 @@ ssize_t FileSender::send_next_chunk(int sock_fd) {
 			return -1;
 		}
 		else {
-			perror("send_next_chunk send");
+			perror("send_next_chunk send in file sender");
 			exit(EXIT_FAILURE);
 		}
 
