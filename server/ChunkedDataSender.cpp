@@ -62,7 +62,7 @@ FileSender::FileSender(std::string filename, size_t size) {
 	this->file_size = size;
 }
 
-void FileSender::send_song_chunk(int sock_fd) {
+void FileSender::send_next_chunk(int sock_fd) {
 
     const unsigned int buffer_size = 4096;
     char file_data[buffer_size];
