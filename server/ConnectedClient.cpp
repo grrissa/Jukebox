@@ -6,6 +6,11 @@
 #include <sys/epoll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <filesystem>
+#include <vector>
+#include <algorithm>
+#include <string>
 
 #include "ChunkedDataSender.h"
 #include "ConnectedClient.h"
@@ -13,6 +18,8 @@
 using std::cout;
 using std::cerr;
 using std::string;
+
+namespace fs = std::filesystem;
 
 ConnectedClient::ConnectedClient(int fd, ClientState initial_state) :
 	client_fd(fd), sender(NULL), state(initial_state) {}
@@ -109,6 +116,8 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	// this should be sending the actualy song file in chunks...
 	FileSender *file_sender = new FileSender(filename, song_num_bytes);
+	int num_bytes_sent;
+	int total_bytes_sent;
 	while((num_bytes_sent = file_sender->send_next_chunk(epoll_fd)) > 0) {
 		total_bytes_sent += num_bytes_sent;
 	}
@@ -165,8 +174,8 @@ std::vector<std::string> ConnectedClient::get_songs(string dir){
 	std::vector<std::string> song_vector;
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file()){
-			if (entry.path.filename().extension().c_str() == ".mp3"){
-				string song = entry.path.filename().stem().c_str(); // this will get you the file name
+			if (entry.path().filename().extension() == ".mp3"){
+				string song = entry.path().filename().stem(); // this will get you the file name
 				song_vector.push_back(song);
 			}	
 		}  
@@ -183,12 +192,12 @@ string ConnectedClient::get_info(string dir, int song_num){
 	std::string str(dir);
 
 	std::vector<std::string> song_vector = this->get_songs(dir);
-	if (song_num < 0 && song_num >= song_vector.size()){ // checking if this is a valid song_num
+	if (song_num < 0 && song_num >= (int)song_vector.size()){ // checking if this is a valid song_num
 		return "";
 	}
 
 	// finding the song in the directory
-	string filename = vector[song_num-1] + ".mp3.info";
+	string filename = song_vector[song_num-1] + ".mp3.info";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){
 			
@@ -210,11 +219,11 @@ string ConnectedClient::get_info(string dir, int song_num){
 void ConnectedClient::list_response(int epoll_fd, string dir) {
 
 	string list_data = "";
-	std::vector<std::string> song_vector = this->get_songs((char *)dir);
+	std::vector<std::string> song_vector = this->get_songs(dir);
 
 	// coping the list of songs into list_data
 	for (int i = 0; i < (int)song_vector.size(); i++){
-		list_data += std:to_str(i) + " - "
+		list_data += std::to_string(i) + " - ";
 		list_data += song_vector[i];
 		list_data += "\n";
 	}

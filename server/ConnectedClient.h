@@ -79,8 +79,15 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	std::string get_info(std::string dir, char *info_data);
+	std::string get_info(std::string dir, int song_num);
 
+	/**
+	 * Sends a response to the client.
+	 * Note that this is just to demonstrate sending to the client: it doesn't
+	 * send anything intelligent.
+	 *
+	 * @param epoll_fd File descriptor for epoll.
+	 */
 	std::vector<std::string> get_songs(std::string dir);
 
 	/**
@@ -92,14 +99,6 @@ class ConnectedClient {
 	 */
 	void list_response(int epoll_fd, std::string dir);
 
-	/**
-	 * Sends a response to the client.
-	 * Note that this is just to demonstrate sending to the client: it doesn't
-	 * send anything intelligent.
-	 *
-	 * @param epoll_fd File descriptor for epoll.
-	 */
-	void stop_response(int epoll_fd);
 
 	/**
 	 * Sends a response to the client.
