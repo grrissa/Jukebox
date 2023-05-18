@@ -95,7 +95,10 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 	// if this song is not valid then just send a -1 and client tries again
 	if (song_num < 0 && song_num >= (int)song_vector.size()){
 		hdr->song_num = -1;
-		this->send_message(epoll_fd, segment, sizeof(Header));
+		ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
+		this->sender = array_sender;
+		delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+		this->send_message(epoll_fd, array_sender);
 		return;
 	}
 
@@ -110,40 +113,15 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
     }
 
 	hdr->song_num = htonl(song_num_bytes);
-	this->send_message(epoll_fd, segment, sizeof(Header));
-
-
-
+	ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
+	this->sender = array_sender;
+	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	this->send_message(epoll_fd, array_sender);
 
 	// this should be sending the actualy song file in chunks...
 	FileSender *file_sender = new FileSender(filename, song_num_bytes);
-	int num_bytes_sent = 0;
-	int total_bytes_sent = 0;
-	while((num_bytes_sent = file_sender->send_next_chunk(epoll_fd)) > 0) {
-		total_bytes_sent += num_bytes_sent;
-	}
-	cout << "sent " << total_bytes_sent << " bytes to client\n";
-
-	if (num_bytes_sent < 0) {
-
-		this->state = SENDING;
-		this->sender = file_sender;
-
-		// QUESTION
-		struct epoll_event epoll_out;
-        epoll_out.data.fd = this->client_fd;
-        epoll_out.events = EPOLLOUT;
-
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
-            perror("sending message");
-            exit(EXIT_FAILURE);
-        }
-    }
-	else {
-		// Sent everything with no problem so we are done with our FileSender
-		// object.
-		delete file_sender;
-	}
+	this->sender = file_sender;
+	this->send_message(epoll_fd, file_sender);
 }
 
 
@@ -165,7 +143,10 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	}
 
 	memcpy(hdr+1, info.c_str(), info.size());
-	this->send_message(epoll_fd, segment, sizeof(Header) + info.size());
+	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + info.size());
+	this->sender = array_sender;
+	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	this->send_message(epoll_fd, array_sender);
 }
 
 std::vector<std::string> ConnectedClient::get_songs(string dir){
@@ -277,10 +258,7 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	}
 }
 
-void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
-
-	ArraySender *array_sender = new ArraySender(message, size);
-	delete[] message; // The ArraySender creates its own copy of the data so let's delete this copy
+void ConnectedClient::send_message(int epoll_fd, ChunkedDataSender sender){
 
 	ssize_t num_bytes_sent;
 	ssize_t total_bytes_sent = 0;
@@ -288,7 +266,7 @@ void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
 	// keep sending the next chunk until it says we either didn't send
 	// anything (0 return indicates nothing left to send) or until we can't
 	// send anymore because of a full socket buffer (-1 return value)
-	while((num_bytes_sent = array_sender->send_next_chunk(epoll_fd)) > 0) {
+	while((num_bytes_sent = sender->send_next_chunk(epoll_fd)) > 0) {
 		total_bytes_sent += num_bytes_sent;
 	}
 	cout << "sent " << total_bytes_sent << " bytes to client\n";
@@ -296,7 +274,7 @@ void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
 	if (num_bytes_sent < 0) {
 
 		this->state = SENDING;
-		this->sender = array_sender;
+		this->sender = sender;
 
 		// QUESTION
 		struct epoll_event epoll_out;
@@ -311,7 +289,41 @@ void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
 	else {
 		// Sent everything with no problem so we are done with our ArraySender
 		// object.
-		delete array_sender;
+		delete sender;
+	}
+}
+
+void ConnectedClient::continue_sending(int epoll_fd){
+
+	ssize_t num_bytes_sent;
+	ssize_t total_bytes_sent = 0;
+
+	// keep sending the next chunk until it says we either didn't send
+	// anything (0 return indicates nothing left to send) or until we can't
+	// send anymore because of a full socket buffer (-1 return value)
+	while((num_bytes_sent = this->sender->send_next_chunk(epoll_fd)) > 0) {
+		total_bytes_sent += num_bytes_sent;
+	}
+	cout << "sent " << total_bytes_sent << " bytes to client\n";
+
+	if (num_bytes_sent < 0) {
+
+		this->state = SENDING;
+
+		// QUESTION
+		struct epoll_event epoll_out;
+        epoll_out.data.fd = this->client_fd;
+        epoll_out.events = EPOLLOUT;
+
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
+            perror("sending message");
+            exit(EXIT_FAILURE);
+        }
+    }
+	else {
+		// Sent everything with no problem so we are done with our ArraySender
+		// object.
+		delete this->sender;
 	}
 }
 
