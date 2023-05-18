@@ -97,7 +97,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 		hdr->song_num = -1;
 		ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
 		this->sender = array_sender;
-		delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+		//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 		this->send_message(epoll_fd, array_sender);
 		return;
 	}
@@ -115,7 +115,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 	hdr->song_num = htonl(song_num_bytes);
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
 	this->sender = array_sender;
-	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 	this->send_message(epoll_fd, array_sender);
 
 	// this should be sending the actualy song file in chunks...
@@ -145,7 +145,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	memcpy(hdr+1, info.c_str(), info.size());
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + info.size());
 	this->sender = array_sender;
-	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 	this->send_message(epoll_fd, array_sender);
 }
 
@@ -218,7 +218,12 @@ void ConnectedClient::list_response(int epoll_fd, string dir) {
 
 	memcpy(hdr + 1, list_data.c_str(), list_data.size()); // this is copying data into the messsage HELP
 
-	this->send_message(epoll_fd, segment, sizeof(Header) + list_data.size());
+
+	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + list_data.size());
+	this->sender = array_sender;
+	//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	this->send_message(epoll_fd, array_sender);
+
 
 }
 
@@ -258,7 +263,7 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	}
 }
 
-void ConnectedClient::send_message(int epoll_fd, ChunkedDataSender sender){
+void ConnectedClient::send_message(int epoll_fd, ChunkedDataSender *sender){
 
 	ssize_t num_bytes_sent;
 	ssize_t total_bytes_sent = 0;

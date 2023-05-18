@@ -107,7 +107,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void send_message(int epoll_fd, ChunkedDataSender sender);
+	void send_message(int epoll_fd, ChunkedDataSender *sender);
 
 	/**
 	 * Sends a response to the client.
