@@ -61,7 +61,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void play_response(int epoll_fd, int song_num, const char *dir);
+	void play_response(int epoll_fd, int song_num, std::string dir);
 
 	/**
 	 * Sends a response to the client.
@@ -70,7 +70,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void info_response(int epoll_fd, int song_num, const char *dir);
+	void info_response(int epoll_fd, int song_num, std::string dir);
 
 	/**
 	 * Sends a response to the client.
@@ -79,9 +79,9 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	std::string get_info(const char *dir, char *info_data);
+	std::string get_info(std::string dir, char *info_data);
 
-	std::vector<std::string> get_songs(char *info_data);
+	std::vector<std::string> get_songs(std::string dir);
 
 	/**
 	 * Sends a response to the client.
@@ -90,7 +90,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void list_response(int epoll_fd, const char *dir);
+	void list_response(int epoll_fd, std::string dir);
 
 	/**
 	 * Sends a response to the client.
@@ -117,7 +117,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void handle_input(int epoll_fd, const char *dir);
+	void handle_input(int epoll_fd, std::string dir);
 
 	/**
 	 * Handles a close request from the client.

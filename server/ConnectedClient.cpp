@@ -75,7 +75,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	}
 }
 
-void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir) {
+void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	// send the song length
 	char segment[sizeof(Header)];
@@ -93,7 +93,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
 
 	std::uintmax_t song_num_bytes = 0;
 	// finding the song in the directory
-	string filename = vector[song_num-1] + ".mp3";
+	string filename = song_vector[song_num-1] + ".mp3";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){			
 			song_num_bytes = fs::file_size(entry);
@@ -139,7 +139,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
 
 
 
-void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir) {
+void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 
 	string info = this->get_info(dir, song_num);
 
@@ -158,7 +158,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir)
 	this->send_message(epoll_fd, segment, sizeof(Header) + info.size());
 }
 
-std::vector<std::string> ConnectedClient::get_songs(const char *dir){
+std::vector<std::string> ConnectedClient::get_songs(string dir){
 	// Turn the char array into a C++ string for easier processing.
 	std::string str(dir);
     
@@ -177,7 +177,7 @@ std::vector<std::string> ConnectedClient::get_songs(const char *dir){
 	return song_vector;
 }
 
-string ConnectedClient::get_info(const char *dir, int song_num){
+string ConnectedClient::get_info(string dir, int song_num){
 
 	// Turn the char array into a C++ string for easier processing.
 	std::string str(dir);
@@ -207,7 +207,7 @@ string ConnectedClient::get_info(const char *dir, int song_num){
 
 }
 
-void ConnectedClient::list_response(int epoll_fd, const char *dir) {
+void ConnectedClient::list_response(int epoll_fd, string dir) {
 
 	string list_data = "";
 	std::vector<std::string> song_vector = this->get_songs((char *)dir);
@@ -231,7 +231,7 @@ void ConnectedClient::list_response(int epoll_fd, const char *dir) {
 
 }
 
-void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
+void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	// QUESTION: so this is the driver... we are doing all of the receiving in here and
 	// then calling send dummy to send the actual data that theyre req?????? how do we pass that data onto send dummy 
 	// should we create a function for each request type from the client

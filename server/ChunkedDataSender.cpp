@@ -57,11 +57,11 @@ ssize_t ArraySender::send_next_chunk(int sock_fd) {
 
 
 FileSender::FileSender(std::string filename, size_t size) {
-	std::ifstream this->file(filename, std::ios::binary);
+	this->file(filename, std::ios::binary);
 	this->file_size = size;
 }
 
-virtual ssize_t FileSender::send_song_chunk(int sock_fd) {
+ssize_t FileSender::send_next_chunk(int sock_fd) {
 
     // keep reading while we haven't reached the end of the file (EOF)
     while (!this->file.eof()) {
@@ -71,7 +71,7 @@ virtual ssize_t FileSender::send_song_chunk(int sock_fd) {
 		char chunk[CHUNK_SIZE];
 		this->file.read(chunk, CHUNK_SIZE); // read up to buffer_size bytes into file_data buffer
 		
-		ssize_t num_bytes_sent = send(sock_fd, chunk, bytes_in_chunk, 0);
+		ssize_t num_bytes_sent = send(sock_fd, chunk, CHUNK_SIZE, 0);
 
 		if (num_bytes_sent > 0){
 			return num_bytes_sent;
