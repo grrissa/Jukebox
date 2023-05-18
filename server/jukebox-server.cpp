@@ -334,6 +334,7 @@ void event_loop(int epoll_fd, int server_socket, const char *dir) {
             }
 
 			// Check if this is an "output" event.
+			// ie: its ok to write to the socket because buffer has space and can send to client now
 			// Note: You may want/need to make this an else if, depending on
 			// how you are handling clients.
 			if ((events[n].events & EPOLLOUT) != 0) {
@@ -343,7 +344,7 @@ void event_loop(int epoll_fd, int server_socket, const char *dir) {
 				 * You'll therefore need to continue sending whatever response
 				 * you had in progress.
 				 */
-				//clients[events[n].data.fd].new_fun(epoll_fd);
+				clients[events[n].data.fd].continue_sending(epoll_fd);
 				// TODO: Create a new function in your ConnectedClient class
 				// and call that here, sort of like what was done for
 				// handle_input and handle_close earlier in this function.

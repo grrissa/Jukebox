@@ -61,7 +61,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void play_response(int epoll_fd, int song_num, const char *dir);
+	void play_response(int epoll_fd, int song_num, std::string dir);
 
 	/**
 	 * Sends a response to the client.
@@ -70,7 +70,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void info_response(int epoll_fd, int song_num, const char *dir);
+	void info_response(int epoll_fd, int song_num, std::string dir);
 
 	/**
 	 * Sends a response to the client.
@@ -79,9 +79,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	std::string get_info(const char *dir, char *info_data);
-
-	std::vector<std::string> get_songs(char *info_data);
+	std::string get_info(std::string dir, int song_num);
 
 	/**
 	 * Sends a response to the client.
@@ -90,7 +88,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void list_response(int epoll_fd, const char *dir);
+	std::vector<std::string> get_songs(std::string dir);
 
 	/**
 	 * Sends a response to the client.
@@ -99,7 +97,8 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void stop_response(int epoll_fd);
+	void list_response(int epoll_fd, std::string dir);
+
 
 	/**
 	 * Sends a response to the client.
@@ -108,7 +107,16 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void send_message(int epoll_fd, char *message, uint32_t size);
+	void send_message(int epoll_fd, ChunkedDataSender sender);
+
+	/**
+	 * Sends a response to the client.
+	 * Note that this is just to demonstrate sending to the client: it doesn't
+	 * send anything intelligent.
+	 *
+	 * @param epoll_fd File descriptor for epoll.
+	 */
+	void continue_sending(int epoll_fd);
 
 
 
@@ -117,7 +125,7 @@ class ConnectedClient {
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
-	void handle_input(int epoll_fd, const char *dir);
+	void handle_input(int epoll_fd, std::string dir);
 
 	/**
 	 * Handles a close request from the client.

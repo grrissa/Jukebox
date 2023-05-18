@@ -4,8 +4,14 @@
 
 #include <unistd.h>
 #include <sys/epoll.h>
+#include <fstream>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <filesystem>
+#include <vector>
+#include <algorithm>
+#include <string>
 
 #include "ChunkedDataSender.h"
 #include "ConnectedClient.h"
@@ -13,6 +19,8 @@
 using std::cout;
 using std::cerr;
 using std::string;
+
+namespace fs = std::filesystem;
 
 ConnectedClient::ConnectedClient(int fd, ClientState initial_state) :
 	client_fd(fd), sender(NULL), state(initial_state) {}
@@ -75,7 +83,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 	}
 }
 
-void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir) {
+void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	// send the song length
 	char segment[sizeof(Header)];
@@ -87,13 +95,16 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
 	// if this song is not valid then just send a -1 and client tries again
 	if (song_num < 0 && song_num >= (int)song_vector.size()){
 		hdr->song_num = -1;
-		this->send_message(epoll_fd, segment, sizeof(Header));
+		ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
+		this->sender = array_sender;
+		delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+		this->send_message(epoll_fd, array_sender);
 		return;
 	}
 
 	std::uintmax_t song_num_bytes = 0;
 	// finding the song in the directory
-	string filename = vector[song_num-1] + ".mp3";
+	string filename = song_vector[song_num-1] + ".mp3";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){			
 			song_num_bytes = fs::file_size(entry);
@@ -102,19 +113,21 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, const char *dir)
     }
 
 	hdr->song_num = htonl(song_num_bytes);
-	this->send_message(epoll_fd, segment, sizeof(Header));
+	ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
+	this->sender = array_sender;
+	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	this->send_message(epoll_fd, array_sender);
 
 	// this should be sending the actualy song file in chunks...
 	FileSender *file_sender = new FileSender(filename, song_num_bytes);
-
-	file_sender->send_song_chunk(epoll_fd);
-	delete file_sender;
+	this->sender = file_sender;
+	this->send_message(epoll_fd, file_sender);
 }
 
 
 
 
-void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir) {
+void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 
 	string info = this->get_info(dir, song_num);
 
@@ -130,18 +143,21 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, const char *dir)
 	}
 
 	memcpy(hdr+1, info.c_str(), info.size());
-	this->send_message(epoll_fd, segment, sizeof(Header) + info.size());
+	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + info.size());
+	this->sender = array_sender;
+	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	this->send_message(epoll_fd, array_sender);
 }
 
-std::vector<std::string> ConnectedClient::get_songs(const char *dir){
+std::vector<std::string> ConnectedClient::get_songs(string dir){
 	// Turn the char array into a C++ string for easier processing.
 	std::string str(dir);
     
 	std::vector<std::string> song_vector;
-    for(auto& entry: fs::directory_iterator(dir)) {
-        if (entry.is_regular_file()){
-			if (entry.path.filename().extension().c_str() == ".mp3"){
-				string song = entry.path.filename().stem().c_str(); // this will get you the file name
+    for(fs::directory_iterator entry(dir); entry != fs::directory_iterator(); ++entry) {
+        if (entry->is_regular_file()){
+			if (entry->path().extension() == ".mp3"){
+				string song = entry->path().filename().stem().string(); // this will get you the file name
 				song_vector.push_back(song);
 			}	
 		}  
@@ -152,18 +168,18 @@ std::vector<std::string> ConnectedClient::get_songs(const char *dir){
 	return song_vector;
 }
 
-string ConnectedClient::get_info(const char *dir, int song_num){
+string ConnectedClient::get_info(string dir, int song_num){
 
 	// Turn the char array into a C++ string for easier processing.
 	std::string str(dir);
 
 	std::vector<std::string> song_vector = this->get_songs(dir);
-	if (song_num < 0 && song_num >= song_vector.size()){ // checking if this is a valid song_num
+	if (song_num < 0 && song_num >= (int)song_vector.size()){ // checking if this is a valid song_num
 		return "";
 	}
 
 	// finding the song in the directory
-	string filename = vector[song_num-1] + ".mp3.info";
+	string filename = song_vector[song_num-1] + ".mp3.info";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){
 			
@@ -182,14 +198,14 @@ string ConnectedClient::get_info(const char *dir, int song_num){
 
 }
 
-void ConnectedClient::list_response(int epoll_fd, const char *dir) {
+void ConnectedClient::list_response(int epoll_fd, string dir) {
 
 	string list_data = "";
-	std::vector<std::string> song_vector = this->get_songs((char *)dir);
+	std::vector<std::string> song_vector = this->get_songs(dir);
 
 	// coping the list of songs into list_data
 	for (int i = 0; i < (int)song_vector.size(); i++){
-		list_data += std:to_str(i) + " - "
+		list_data += std::to_string(i) + " - ";
 		list_data += song_vector[i];
 		list_data += "\n";
 	}
@@ -200,13 +216,13 @@ void ConnectedClient::list_response(int epoll_fd, const char *dir) {
 	Header* hdr = (Header*)segment;
 	hdr->type = LIST_DATA;
 
-	memcpy(hdr + 1, list_data, list_data.size()); // this is copying data into the messsage HELP
+	memcpy(hdr + 1, list_data.c_str(), list_data.size()); // this is copying data into the messsage HELP
 
 	this->send_message(epoll_fd, segment, sizeof(Header) + list_data.size());
 
 }
 
-void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
+void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	// QUESTION: so this is the driver... we are doing all of the receiving in here and
 	// then calling send dummy to send the actual data that theyre req?????? how do we pass that data onto send dummy 
 	// should we create a function for each request type from the client
@@ -242,14 +258,7 @@ void ConnectedClient::handle_input(int epoll_fd, const char *dir) {
 	}
 }
 
-void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
-	// if (send(this->sock_fd, message, size, 0) < 0) {
-	// 		perror("sending a message");
-	// 		exit(EXIT_FAILURE);
-	// }
-
-	ArraySender *array_sender = new ArraySender(message, size);
-	delete[] message; // The ArraySender creates its own copy of the data so let's delete this copy
+void ConnectedClient::send_message(int epoll_fd, ChunkedDataSender sender){
 
 	ssize_t num_bytes_sent;
 	ssize_t total_bytes_sent = 0;
@@ -257,7 +266,7 @@ void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
 	// keep sending the next chunk until it says we either didn't send
 	// anything (0 return indicates nothing left to send) or until we can't
 	// send anymore because of a full socket buffer (-1 return value)
-	while((num_bytes_sent = array_sender->send_next_chunk(epoll_fd)) > 0) {
+	while((num_bytes_sent = sender->send_next_chunk(epoll_fd)) > 0) {
 		total_bytes_sent += num_bytes_sent;
 	}
 	cout << "sent " << total_bytes_sent << " bytes to client\n";
@@ -265,7 +274,7 @@ void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
 	if (num_bytes_sent < 0) {
 
 		this->state = SENDING;
-		this->sender = array_sender;
+		this->sender = sender;
 
 		// QUESTION
 		struct epoll_event epoll_out;
@@ -277,12 +286,44 @@ void ConnectedClient::send_message(int epoll_fd, char *message, uint32_t size){
             exit(EXIT_FAILURE);
         }
     }
-
-
 	else {
 		// Sent everything with no problem so we are done with our ArraySender
 		// object.
-		delete array_sender;
+		delete sender;
+	}
+}
+
+void ConnectedClient::continue_sending(int epoll_fd){
+
+	ssize_t num_bytes_sent;
+	ssize_t total_bytes_sent = 0;
+
+	// keep sending the next chunk until it says we either didn't send
+	// anything (0 return indicates nothing left to send) or until we can't
+	// send anymore because of a full socket buffer (-1 return value)
+	while((num_bytes_sent = this->sender->send_next_chunk(epoll_fd)) > 0) {
+		total_bytes_sent += num_bytes_sent;
+	}
+	cout << "sent " << total_bytes_sent << " bytes to client\n";
+
+	if (num_bytes_sent < 0) {
+
+		this->state = SENDING;
+
+		// QUESTION
+		struct epoll_event epoll_out;
+        epoll_out.data.fd = this->client_fd;
+        epoll_out.events = EPOLLOUT;
+
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
+            perror("sending message");
+            exit(EXIT_FAILURE);
+        }
+    }
+	else {
+		// Sent everything with no problem so we are done with our ArraySender
+		// object.
+		delete this->sender;
 	}
 }
 

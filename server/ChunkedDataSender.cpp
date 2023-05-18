@@ -57,22 +57,44 @@ ssize_t ArraySender::send_next_chunk(int sock_fd) {
 
 
 FileSender::FileSender(std::string filename, size_t size) {
-	std::ifstream file(filename, std::ios::binary);
-	this->file = file;
+	//f(filename, std::ios::binary);
+	this->file.open(filename, std::ios::binary);
 	this->file_size = size;
 }
 
+<<<<<<< HEAD
 void FileSender::send_next_chunk(int sock_fd) {
 
     const unsigned int buffer_size = 4096;
     char file_data[buffer_size];
+=======
+ssize_t FileSender::send_next_chunk(int sock_fd) {
+>>>>>>> a47cabeb371ccd96c9adf8a9df935a42df8cc1a6
 
     // keep reading while we haven't reached the end of the file (EOF)
     while (!this->file.eof()) {
-        this->file.read(file_data, buffer_size); // read up to buffer_size bytes into file_data buffer
-        int bytes_read = this->file.gcount();
-        
-        sendData(client_sock, file_data, bytes_read);
+
+		// Create the chunk and copy the data over from the appropriate
+		// location in the array
+		char chunk[CHUNK_SIZE];
+		this->file.read(chunk, CHUNK_SIZE); // read up to buffer_size bytes into file_data buffer
+		
+		ssize_t num_bytes_sent = send(sock_fd, chunk, CHUNK_SIZE, 0);
+
+		if (num_bytes_sent > 0){
+			return num_bytes_sent;
+		}
+		else if (num_bytes_sent < 0 && errno == EAGAIN){
+			return -1;
+		}
+		else {
+			perror("send_next_chunk send");
+			exit(EXIT_FAILURE);
+		}
+
     }
-    this->file.close();
+
+	return 0;
+
+
 }
