@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <sys/epoll.h>
+#include <fstream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -116,8 +117,8 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	// this should be sending the actualy song file in chunks...
 	FileSender *file_sender = new FileSender(filename, song_num_bytes);
-	int num_bytes_sent;
-	int total_bytes_sent;
+	int num_bytes_sent = 0;
+	int total_bytes_sent = 0;
 	while((num_bytes_sent = file_sender->send_next_chunk(epoll_fd)) > 0) {
 		total_bytes_sent += num_bytes_sent;
 	}
@@ -172,10 +173,10 @@ std::vector<std::string> ConnectedClient::get_songs(string dir){
 	std::string str(dir);
     
 	std::vector<std::string> song_vector;
-    for(auto& entry: fs::directory_iterator(dir)) {
-        if (entry.is_regular_file()){
-			if (entry.path().filename().extension() == ".mp3"){
-				string song = entry.path().filename().stem(); // this will get you the file name
+    for(fs::directory_iterator entry(dir); entry != fs::directory_iterator(); ++entry) {
+        if (entry->is_regular_file()){
+			if (entry->path().extension() == ".mp3"){
+				string song = entry->path().filename().stem().string(); // this will get you the file name
 				song_vector.push_back(song);
 			}	
 		}  

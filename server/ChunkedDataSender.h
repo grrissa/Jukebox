@@ -59,7 +59,7 @@ class ArraySender : public virtual ChunkedDataSender {
  */
 class FileSender : public virtual ChunkedDataSender {
   private:
-	std::fstream file; // the file of data to send
+	std::ifstream file; // the file of data to send
 	size_t file_size; // length of the file to send (in bytes)
 
 

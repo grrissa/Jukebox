@@ -57,7 +57,8 @@ ssize_t ArraySender::send_next_chunk(int sock_fd) {
 
 
 FileSender::FileSender(std::string filename, size_t size) {
-	this->file(filename, std::ios::binary);
+	//f(filename, std::ios::binary);
+	this->file.open(filename, std::ios::binary);
 	this->file_size = size;
 }
 
