@@ -41,25 +41,37 @@ public class AudioClient {
 		Scanner s = new Scanner(System.in);
 		BufferedInputStream in = null;
 		Thread player = null;
+		// Socket socket;
 
-		System.out.println("Client: Connecting to localhost (127.0.0.1) port 6666");
-		Socket socket = new Socket("127.0.0.1", 6666); // moved this outside the if (command) statements
+		System.out.println("Client: Connecting to localhost (127.0.0.1) port 7102...6666");
+		// try{
+		// 		socket = new Socket("127.0.0.1", 7102); // moved this outside the if (command) statements
+		// 		in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
+		// 	} catch(Exception e){
+		// 		System.out.println(e);
+		// 	}
+		Socket socket = new Socket(args[0],Integer.parseInt(args[1]));//"127.0.0.1", 7102); // moved this outside the if (command) statements
 		in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 		while (true) {
 			System.out.print(">> ");
 			String c = s.nextLine();
 			String[] command = c.split(" ");
-			
+			// try{
+			// 	socket = new Socket("127.0.0.1", 7102); // moved this outside the if (command) statements
+			// 	in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
+			// } catch(Exception e){
+			// 	System.out.println(e);
+			// }
 			if (command[0].equals("play")){
 				try {
 					if (socket.isConnected()) {
 						// checking that the song number is a number
-						if (player.isAlive()){
-							player.stop(); // stop music
-							// reset socket and input stream
-							socket = new Socket("127.0.0.1", 6666);
-							in = new BufferedInputStream(socket.getInputStream(), 2048);
-						}
+						// if (player.isAlive()){
+						// 	player.stop(); // stop music
+						// 	// reset socket and input stream
+						// 	socket = new Socket("127.0.0.1", 6666);
+						// 	in = new BufferedInputStream(socket.getInputStream(), 2048);
+						// }
 						try {
 							int song_num = Integer.parseInt(command[0]);
 							sendHeader(socket, MessageType.PLAY, song_num);
@@ -137,7 +149,7 @@ public class AudioClient {
 		}
 
 		System.out.println("Client: Exiting");
-		socket.close();
+		// socket.close();
 		
 	}
 	/**
