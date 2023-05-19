@@ -271,7 +271,7 @@ void ConnectedClient::send_message(int epoll_fd, ChunkedDataSender *sender){
 	// keep sending the next chunk until it says we either didn't send
 	// anything (0 return indicates nothing left to send) or until we can't
 	// send anymore because of a full socket buffer (-1 return value)
-	while((num_bytes_sent = sender->send_next_chunk(epoll_fd)) > 0) {
+	while((num_bytes_sent = sender->send_next_chunk(this->client_fd)) > 0) {
 		total_bytes_sent += num_bytes_sent;
 	}
 	cout << "sent " << total_bytes_sent << " bytes to client\n";
@@ -306,7 +306,7 @@ void ConnectedClient::continue_sending(int epoll_fd){
 	// keep sending the next chunk until it says we either didn't send
 	// anything (0 return indicates nothing left to send) or until we can't
 	// send anymore because of a full socket buffer (-1 return value)
-	while((num_bytes_sent = this->sender->send_next_chunk(epoll_fd)) > 0) {
+	while((num_bytes_sent = this->sender->send_next_chunk(this->client_fd)) > 0) {
 		total_bytes_sent += num_bytes_sent;
 	}
 	cout << "sent " << total_bytes_sent << " bytes to client\n";
