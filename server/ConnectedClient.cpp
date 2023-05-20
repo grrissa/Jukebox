@@ -142,6 +142,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	if (info.size() == 0){
 		hdr->song_num = htonl(-1); // this means that there was no info about the song or song was invalid
 	}
+
 	cout << info;
 	memcpy(hdr+1, info.c_str(), info.size());
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + info.size());
@@ -185,10 +186,12 @@ string ConnectedClient::get_info(string dir, int song_num){
     for(auto& entry: fs::directory_iterator(dir)) {
 		cout << entry.path().filename() << "\n";
         if (entry.is_regular_file() && entry.path().filename() == filename){
+			
 			// reading the file into string info
 			std::ifstream file(entry.path().filename());
-			string info((std::istreambuf_iterator<char>(file)),
-						 std::istreambuf_iterator<char>());
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			std::string info = buffer.str();
 			file.close();
 
 			cout << info << "\n";
