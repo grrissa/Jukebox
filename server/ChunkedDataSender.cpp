@@ -64,8 +64,8 @@ FileSender::FileSender(std::string filename, size_t size) {
 
 ssize_t FileSender::send_next_chunk(int sock_fd) {
 
-	char chunk[CHUNK_SIZE];
-	memcpy(chunk, 0, CHUNK_SIZE);
+	char *chunk = new char[CHUNK_SIZE];
+	memset(chunk, 0, CHUNK_SIZE);
 
 	file.seekg(this->curr_loc);
 	this->file.read(chunk, CHUNK_SIZE); // read up to buffer_size bytes into file_data buffer
