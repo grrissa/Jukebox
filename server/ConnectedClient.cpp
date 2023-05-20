@@ -104,7 +104,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	std::uintmax_t song_num_bytes = 0;
 	// finding the song in the directory
-	string filename = song_vector[song_num-1] + ".mp3";
+	string filename = song_vector[song_num] + ".mp3";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){			
 			song_num_bytes = fs::file_size(entry);
@@ -142,7 +142,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	if (info.size() == 0){
 		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
 	}
-
+	cout << info;
 	memcpy(hdr+1, info.c_str(), info.size());
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + info.size());
 	this->sender = array_sender;
@@ -180,7 +180,7 @@ string ConnectedClient::get_info(string dir, int song_num){
 	}
 
 	// finding the song in the directory
-	string filename = song_vector[song_num-1] + ".mp3.info";
+	string filename = song_vector[song_num] + ".mp3.info";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){
 			
