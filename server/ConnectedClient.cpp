@@ -249,7 +249,10 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	for (int i = 0; i < bytes_received; i++)
 		cout << data[i];
 	cout << hdr->type;
+	cout << ntohl(hdr->song_num);
+	cout << hdr->song_num;
 	cout << "\n";
+
 
 	if (hdr->type == PLAY){
 
