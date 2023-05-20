@@ -104,7 +104,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	std::uintmax_t song_num_bytes = 0;
 	// finding the song in the directory
-	string filename = song_vector[song_num-1] + ".mp3";
+	string filename = song_vector[song_num] + ".mp3";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){			
 			song_num_bytes = fs::file_size(entry);
@@ -180,7 +180,7 @@ string ConnectedClient::get_info(string dir, int song_num){
 	}
 
 	// finding the song in the directory
-	string filename = song_vector[song_num-1] + ".mp3.info";
+	string filename = song_vector[song_num] + ".mp3.info";
     for(auto& entry: fs::directory_iterator(dir)) {
         if (entry.is_regular_file() && entry.path().filename() == filename){
 			
