@@ -250,6 +250,7 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 		cout << data[i];
 	cout << hdr->type;
 	cout << ntohl(hdr->song_num);
+	cout << "\n";
 	cout << hdr->song_num;
 	cout << "\n";
 
