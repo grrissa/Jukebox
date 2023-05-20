@@ -86,7 +86,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	// send the song length
-	char segment[sizeof(Header)];
+	char *segment = new char[sizeof(Header)];
 	memset(segment, 0, sizeof(Header));
 	Header* hdr = (Header*)segment;
 	hdr->type = SONG_LEN;
@@ -97,7 +97,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 		hdr->song_num = htonl(-1);
 		ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
 		this->sender = array_sender;
-		//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+		delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 		this->send_message(epoll_fd, array_sender);
 		return;
 	}
@@ -115,7 +115,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 	hdr->song_num = htonl(song_num_bytes);
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
 	this->sender = array_sender;
-	//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 	this->send_message(epoll_fd, array_sender);
 
 	// this should be sending the actualy song file in chunks...
@@ -132,7 +132,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	string info = this->get_info(dir, song_num);
 
 	// now actually making a INFO_DATA message
-	char segment[sizeof(Header) + info.size()];
+	char *segment = new char[sizeof(Header) + info.size()];
 	memset(segment, 0, sizeof(Header) + info.size());
 	Header* hdr = (Header*)segment;
 
@@ -146,7 +146,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	memcpy(hdr+1, info.c_str(), info.size());
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + info.size());
 	this->sender = array_sender;
-	//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 	this->send_message(epoll_fd, array_sender);
 }
 
