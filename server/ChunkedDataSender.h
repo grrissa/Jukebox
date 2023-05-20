@@ -61,6 +61,7 @@ class FileSender : public virtual ChunkedDataSender {
   private:
 	std::ifstream file; // the file of data to send
 	size_t file_size; // length of the file to send (in bytes)
+	ssize_t curr_loc = 0;
 
 
   public:
