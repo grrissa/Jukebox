@@ -56,9 +56,9 @@ ssize_t ArraySender::send_next_chunk(int sock_fd) {
 
 
 
-FileSender::FileSender(std::string filename, size_t size) {
+FileSender::FileSender(std::string filename, string dir) {
 	//f(filename, std::ios::binary);
-	this->filename = filename;
+	this->filename = dir + filename;
 	this->file_size = size;
 }
 

@@ -71,7 +71,7 @@ class FileSender : public virtual ChunkedDataSender {
 	/**
 	 * Constructor for FileSender class.
 	 */
-	FileSender(std::string filename, size_t file_size);
+	FileSender(std::string filename, string dir);
 
 	/**
 	 * Destructor for ArraySender class.

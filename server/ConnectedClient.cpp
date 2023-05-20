@@ -122,7 +122,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 	this->send_message(epoll_fd, array_sender);
 
 	// this should be sending the actualy song file in chunks...
-	FileSender *file_sender = new FileSender(filename, song_num_bytes);
+	FileSender *file_sender = new FileSender(filename, dir);
 	this->sender = file_sender;
 	this->send_message(epoll_fd, file_sender);
 }
