@@ -191,10 +191,11 @@ string ConnectedClient::get_info(string dir, int song_num){
         if (entry.is_regular_file() && entry.path().filename() == filename){
 
 			// reading the file into string info
-			std::ifstream file(filename, std::ios::in);
+			std::ifstream file(filename);
 			std::stringstream buffer;
 			buffer << file.rdbuf();
 			std::string info = buffer.str();
+
 			file.close();
 
 			cout << info << "\n";
