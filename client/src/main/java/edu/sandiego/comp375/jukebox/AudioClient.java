@@ -50,9 +50,11 @@ public class AudioClient {
 		// 	} catch(Exception e){
 		// 		System.out.println(e);
 		// 	}
-		Socket socket = new Socket(args[0],Integer.parseInt(args[1]));//"127.0.0.1", 7102); // moved this outside the if (command) statements
-		in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
+		// Socket socket = new Socket(args[0],Integer.parseInt(args[1]));//"127.0.0.1", 7102); // moved this outside the if (command) statements
+		// in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 		while (true) {
+			Socket socket = new Socket(args[0],Integer.parseInt(args[1]));//"127.0.0.1", 7102); // moved this outside the if (command) statements
+			in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 			System.out.print(">> ");
 			String c = s.nextLine();
 			String[] command = c.split(" ");
@@ -117,6 +119,7 @@ public class AudioClient {
 						// checking that the song number is a number
 						try {
 							int song_num = Integer.parseInt(command[1]);
+							System.out.println(song_num);
 							sendHeader(socket, MessageType.INFO, song_num);
 
 							// keep calling getMessage until 
@@ -146,6 +149,7 @@ public class AudioClient {
 			else {
 				System.err.println("ERROR: unknown command");
 			}
+			socket.close();
 		}
 
 		System.out.println("Client: Exiting");
@@ -193,6 +197,10 @@ public class AudioClient {
 			return false;
 		}
 		int data_len = in.readInt();
+		if(data_len == -1){
+			System.out.println("invalid song number");
+			return false;
+		}
 		if (response_type == looking_for) {
 			System.out.println("response==lookingfor");
 			if (response_type == MessageType.SONG_LEN) {
@@ -207,9 +215,12 @@ public class AudioClient {
 			}
 			else if (response_type == MessageType.INFO_DATA) {
 				System.out.println("Server replied with info!");
-				// byte[] res =  s.getInputStream().readAllBytes();
+				// //byte[] res =  s.getInputStream().readAllBytes();
+				// byte[] res = new byte[data_len];
+				// s.getInputStream().read(res);
 				// String response_str = new String(res);
 				// System.out.println(response_str);
+				System.out.print(data_len);
 				byte[] res = s.getInputStream().readNBytes(data_len);
 				String response_str = new String(res);
 				System.out.println(response_str);
