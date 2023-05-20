@@ -69,8 +69,9 @@ ssize_t FileSender::send_next_chunk(int sock_fd) {
 
 	file.seekg(this->curr_loc);
 	this->file.read(chunk, CHUNK_SIZE); // read up to buffer_size bytes into file_data buffer
-	
-	ssize_t num_bytes_sent = send(sock_fd, chunk, CHUNK_SIZE, 0);
+	int bytes_in_chunk = file.gcount();
+
+	ssize_t num_bytes_sent = send(sock_fd, chunk, bytes_in_chunk, 0);
 
 	if (num_bytes_sent > 0){
 		this->curr_loc += num_bytes_sent;
