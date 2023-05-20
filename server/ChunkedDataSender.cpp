@@ -64,7 +64,7 @@ FileSender::FileSender(std::string filename, size_t size) {
 
 ssize_t FileSender::send_next_chunk(int sock_fd) {
 
-	std::ifstream file(this->filename, std::ifstream::binary);
+	this->file.open((this->filename).c_str(), std::ios::binary );
 	char *chunk = new char[CHUNK_SIZE];
 	memset(chunk, 0, CHUNK_SIZE);
 

@@ -3,6 +3,8 @@
 
 #include <cstddef>
 #include <fstream>
+#include <iostream>
+
 
 const size_t CHUNK_SIZE = 4096;
 
@@ -59,7 +61,8 @@ class ArraySender : public virtual ChunkedDataSender {
  */
 class FileSender : public virtual ChunkedDataSender {
   private:
-	string filename; // the file of data to send
+	std::string filename; // the file of data to send
+	std::ifstream file;
 	size_t file_size; // length of the file to send (in bytes)
 	ssize_t curr_loc = 0;
 
@@ -74,7 +77,7 @@ class FileSender : public virtual ChunkedDataSender {
 	 * Destructor for ArraySender class.
 	 */
 	~FileSender() {
-		file.close();
+		this->file.close();
 	}
 
 	/**
