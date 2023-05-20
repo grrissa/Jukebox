@@ -128,7 +128,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 
 void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
-
+	cout << "in info response";
 	string info = this->get_info(dir, song_num);
 
 	// now actually making a INFO_DATA message
