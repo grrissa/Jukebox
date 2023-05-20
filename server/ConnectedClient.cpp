@@ -212,7 +212,7 @@ void ConnectedClient::list_response(int epoll_fd, string dir) {
 	}
 
 	// now actually making a LIST_DATA message
-	char segment[sizeof(Header) + list_data.size()];
+	char *segment = new char[sizeof(Header) + list_data.size()];
 	memset(segment, 0, sizeof(Header) + list_data.size());
 	Header* hdr = (Header*)segment;
 	hdr->type = LIST_DATA;
