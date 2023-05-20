@@ -181,9 +181,10 @@ string ConnectedClient::get_info(string dir, int song_num){
 
 	// finding the song in the directory
 	string filename = song_vector[song_num] + ".mp3.info";
+	cout << filename << "\n";
     for(auto& entry: fs::directory_iterator(dir)) {
+		cout << entry.path().filename() << "\n";
         if (entry.is_regular_file() && entry.path().filename() == filename){
-			
 			// reading the file into string info
 			std::ifstream file(entry.path().filename());
 			string info((std::istreambuf_iterator<char>(file)),
