@@ -216,7 +216,7 @@ void ConnectedClient::list_response(int epoll_fd, string dir) {
 	memset(segment, 0, sizeof(Header) + list_data.size());
 	Header* hdr = (Header*)segment;
 	hdr->type = LIST_DATA;
-	hdr->song_num = htonl(list_data.size());
+	hdr->song_num = list_data.size();
 
 	memcpy(hdr + 1, list_data.c_str(), list_data.size()); // this is copying data into the messsage HELP
 
