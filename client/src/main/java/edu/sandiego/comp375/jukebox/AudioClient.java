@@ -12,7 +12,7 @@ import java.lang.Exception;
 import java.util.stream.*;
 
 enum MessageType {
-  PLAY, INFO, LIST, BAD_REQ, SONG_LEN, INFO_DATA, LIST_DATA;
+  PLAY, INFO, LIST, STOP, DISCONNECT, BAD_REQ, SONG_LEN, INFO_DATA, LIST_DATA;
 
   private static final MessageType values[] = values();
 
@@ -73,7 +73,8 @@ public class AudioClient {
 						// 	in = new BufferedInputStream(socket.getInputStream(), 2048);
 						// }
 						try {
-							int song_num = Integer.parseInt(command[0]);
+							
+							int song_num = Integer.parseInt(command[1]);
 							sendHeader(socket, MessageType.PLAY, song_num);
 
 							// keep calling getMessage until 
@@ -104,7 +105,6 @@ public class AudioClient {
 			}
 			else if (command[0].equals("list")) {
 				sendHeader(socket, MessageType.LIST, 0);
-
 				// keep calling getMessage until 
 				while (getMessage(socket, MessageType.LIST_DATA));
 		
@@ -112,11 +112,11 @@ public class AudioClient {
 			else if (command[0].equals("info")) {
 				try {
 					if (socket.isConnected()) {
-						in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
+						//in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 
 						// checking that the song number is a number
 						try {
-							int song_num = Integer.parseInt(command[0]);
+							int song_num = Integer.parseInt(command[1]);
 							sendHeader(socket, MessageType.INFO, song_num);
 
 							// keep calling getMessage until 
@@ -187,8 +187,14 @@ public class AudioClient {
 	public static boolean getMessage(Socket s, MessageType looking_for) throws IOException {		
 		DataInputStream in = new DataInputStream(s.getInputStream());
 		MessageType response_type = MessageType.get(in.readByte());
+		System.out.println(response_type);
+		if (response_type == MessageType.BAD_REQ) {
+			System.out.println("Server said the request was bad!");
+			return false;
+		}
 		int data_len = in.readInt();
 		if (response_type == looking_for) {
+			System.out.println("response==lookingfor");
 			if (response_type == MessageType.SONG_LEN) {
 				if (data_len == -1){
 					System.out.println("Song number is invalid. ");
@@ -199,16 +205,19 @@ public class AudioClient {
 				System.out.println(response_str);
 				return true;
 			}
-			else if (response_type == MessageType.INFO) {
+			else if (response_type == MessageType.INFO_DATA) {
 				System.out.println("Server replied with info!");
-				byte[] res =  s.getInputStream().readAllBytes();
+				// byte[] res =  s.getInputStream().readAllBytes();
+				// String response_str = new String(res);
+				// System.out.println(response_str);
+				byte[] res = s.getInputStream().readNBytes(data_len);
 				String response_str = new String(res);
 				System.out.println(response_str);
 				return true;
 			}
-			else if (response_type == MessageType.LIST) {
+			else if (response_type == MessageType.LIST_DATA) {
 				System.out.println("Server replied with list!");
-				byte[] res =  s.getInputStream().readAllBytes();
+				byte[] res = s.getInputStream().readNBytes(data_len);
 				String response_str = new String(res);
 				System.out.println(response_str);
 				return true;
@@ -222,6 +231,13 @@ public class AudioClient {
 				return false;
 			}
 		}
-		return false;
+		// else if (response_type == MessageType.BAD_REQ) {
+		// 	System.out.println("Server said the request was bad!");
+		// 	return false;
+		// }
+		else{
+			System.out.println("else");
+			return false;
+		}
 	}
 }
