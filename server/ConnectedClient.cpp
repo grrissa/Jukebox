@@ -249,19 +249,15 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	for (int i = 0; i < bytes_received; i++)
 		cout << data[i];
 	cout << hdr->type;
-	cout << ntohl(hdr->song_num);
-	cout << "\n";
-	cout << hdr->song_num;
 	cout << "\n";
 
 
 	if (hdr->type == PLAY){
-
-		// QUESTION: will we have to ntohl/htonl?
-        this->play_response(epoll_fd, ntohl(hdr->song_num), dir);
+        this->play_response(epoll_fd, hdr->song_num, dir);
 
     } else if (hdr->type == INFO) {
-		this->info_response(epoll_fd, ntohl(hdr->song_num), dir);
+		cout << "in info else if";
+		this->info_response(epoll_fd, hdr->song_num, dir);
 	} else if (hdr->type == LIST) {
 		this->list_response(epoll_fd, dir);
 	}else if (hdr->type == DISCONNECT) {
