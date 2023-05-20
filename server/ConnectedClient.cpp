@@ -223,7 +223,7 @@ void ConnectedClient::list_response(int epoll_fd, string dir) {
 
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + list_data.size());
 	this->sender = array_sender;
-	//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 	this->send_message(epoll_fd, array_sender);
 
 
