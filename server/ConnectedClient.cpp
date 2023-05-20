@@ -194,8 +194,7 @@ string ConnectedClient::get_info(string dir, int song_num){
 			std::ifstream file(filename, std::ios::in);
 			std::stringstream buffer;
 			buffer << file.rdbuf();
-			cout << buffer;
-			std::string info = buffer.str();
+			std::string fileContents = buffer.str();
 			file.close();
 
 			cout << info << "\n";
