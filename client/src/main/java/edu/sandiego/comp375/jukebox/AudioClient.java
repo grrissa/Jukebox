@@ -189,7 +189,6 @@ public class AudioClient {
 		MessageType response_type = MessageType.get(in.readByte());
 		int data_len = in.readInt();
 		if (response_type == looking_for) {
-			System.out.println("here");
 			if (response_type == MessageType.SONG_LEN) {
 				if (data_len == -1){
 					System.out.println("Song number is invalid. ");
