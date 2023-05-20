@@ -190,7 +190,7 @@ string ConnectedClient::get_info(string dir, int song_num){
 		cout << entry.path().filename() << "\n";
         if (entry.is_regular_file() && entry.path().filename() == filename){
 
-			filename = "/server/music/" + filename;
+			filename = dir + filename;
 
 			// reading the file into string info
 			std::ifstream file(filename);
