@@ -97,7 +97,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 	std::vector<std::string> song_vector = this->get_songs(dir);
 	// if this song is not valid then just send a -1 and client tries again
 	if (song_num < 0 && song_num >= (int)song_vector.size()){
-		hdr->song_num = htonl(-1);
+		hdr->song_num = -1;
 		ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
 		this->sender = array_sender;
 		delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
@@ -115,7 +115,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 		break;         
     }
 
-	hdr->song_num = htonl(song_num_bytes);
+	hdr->song_num = song_num_bytes;
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
 	this->sender = array_sender;
 	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
@@ -341,8 +341,6 @@ void ConnectedClient::continue_sending(int epoll_fd){
 		delete this->sender;
 	}
 }
-
-
 
 
 
