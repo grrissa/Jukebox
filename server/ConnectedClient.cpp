@@ -190,6 +190,7 @@ string ConnectedClient::get_info(string dir, int song_num){
 						 std::istreambuf_iterator<char>());
 			file.close();
 
+			cerr << info << "\n";
 			return info;
 		}            
     }
