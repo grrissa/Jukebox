@@ -43,27 +43,15 @@ public class AudioClient {
 		Thread player = null;
 		// Socket socket;
 
-		System.out.println("Client: Connecting to localhost (127.0.0.1) port 7102...6666");
-		// try{
-		// 		socket = new Socket("127.0.0.1", 7102); // moved this outside the if (command) statements
-		// 		in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
-		// 	} catch(Exception e){
-		// 		System.out.println(e);
-		// 	}
-		// Socket socket = new Socket(args[0],Integer.parseInt(args[1]));//"127.0.0.1", 7102); // moved this outside the if (command) statements
-		// in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
+		System.out.println("Client: Connecting to "+args[0]+" port "+args[1]);
+
+		Socket socket = new Socket(args[0],Integer.parseInt(args[1]));//"127.0.0.1", 7102); // moved this outside the if (command) statements
+		in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 		while (true) {
-			Socket socket = new Socket(args[0],Integer.parseInt(args[1]));//"127.0.0.1", 7102); // moved this outside the if (command) statements
-			in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 			System.out.print(">> ");
 			String c = s.nextLine();
 			String[] command = c.split(" ");
-			// try{
-			// 	socket = new Socket("127.0.0.1", 7102); // moved this outside the if (command) statements
-			// 	in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
-			// } catch(Exception e){
-			// 	System.out.println(e);
-			// }
+
 			if (command[0].equals("play")){
 				try {
 					if (socket.isConnected()) {
@@ -75,21 +63,32 @@ public class AudioClient {
 						// 	in = new BufferedInputStream(socket.getInputStream(), 2048);
 						// }
 						try {
-							
+							DataInputStream i = new DataInputStream(socket.getInputStream());
 							int song_num = Integer.parseInt(command[1]);
 							sendHeader(socket, MessageType.PLAY, song_num);
 
-							// keep calling getMessage until 
-							while (getMessage(socket, MessageType.SONG_LEN));
-							
-
-								//serverSocket.close();
+							//read header
+							MessageType response_type = MessageType.get(i.readByte());
+							int data_len = i.readInt();
+							if(data_len == -1){
+								System.out.println("song does not exist");
+							}
+							else{
+								String output = "";
+								byte[] b = new byte[1024];
+								int bytes_read;
+								while ((bytes_read = in.read(b)) != -1){
+									output = new String(b, 0, bytes_read);
+									if (output.charAt(output.length() -1) == '\n'){
+										break;
+									}
+								}								
+								player = new Thread(new AudioPlayerThread(in));
+								player.start();
+							}
 						} catch (Exception e) {
 							System.out.println(e);
 						}
-
-						player = new Thread(new AudioPlayerThread(in));
-						player.start();
 					}
 				}
 				catch (Exception e) {
@@ -102,6 +101,7 @@ public class AudioClient {
 				// Your final solution should make sure that the exit command
 				// causes music to stop playing immediately.
 				System.out.println("Goodbye!");
+				if(player != null){player.stop(); }// stop music hopefully?
 				socket.close();
 				break;
 			}
@@ -113,9 +113,7 @@ public class AudioClient {
 			}
 			else if (command[0].equals("info")) {
 				try {
-					if (socket.isConnected()) {
-						//in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
-
+					// if (socket.isConnected()) {
 						// checking that the song number is a number
 						try {
 							int song_num = Integer.parseInt(command[1]);
@@ -124,36 +122,33 @@ public class AudioClient {
 
 							// keep calling getMessage until 
 							while (getMessage(socket, MessageType.INFO_DATA));
-							
-
-								//serverSocket.close();
 						} catch (Exception e) {
 							System.out.println(e);
 						}
-					}
+					// }
 				}
 				catch (Exception e) {
 					System.out.println(e);
 				}
 			}
-			else if (command[0].equals("stop")){
-				try{
-					player.stop(); // stop music
-					// reset socket and input stream
-					socket = new Socket("127.0.0.1", 6666);
-					in = new BufferedInputStream(socket.getInputStream(), 2048);
-				} catch (Exception e){
-					System.out.println("No music is playing!");
-				}
-			}
+			// else if (command[0].equals("stop")){
+			// 	try{
+			// 		player.stop(); // stop music
+			// 		// reset socket and input stream
+			// 		socket = new Socket("127.0.0.1", 6666);
+			// 		in = new BufferedInputStream(socket.getInputStream(), 2048);
+			// 	} catch (Exception e){
+			// 		System.out.println("No music is playing!");
+			// 	}
+			// }
 			else {
 				System.err.println("ERROR: unknown command");
 			}
-			socket.close();
+			// socket.close();
 		}
 
 		System.out.println("Client: Exiting");
-		// socket.close();
+		socket.close();
 		
 	}
 	/**
@@ -163,6 +158,7 @@ public class AudioClient {
 	 * @param messageType The type of message
 	 * @param songNumber The size (in bytes) of the message (not including the header)
 	 */
+
 	public static void sendHeader(Socket s, MessageType messageType, int songNumber) throws IOException {
 		// Creates a ByteBuffer, which is a convenient class for turning
 		// different types of values into their byte representations.
@@ -171,71 +167,53 @@ public class AudioClient {
 		ByteBuffer header = ByteBuffer.allocate(5);
 		header.order(ByteOrder.BIG_ENDIAN);
 
-
 		// send the header
-		header.put((byte)messageType.ordinal()); // ordinal gets the number
-												 // associated with the
-												 // MessageType
+		header.put((byte)messageType.ordinal()); // ordinal gets the number associated with the MessageType
 		header.putInt(songNumber);
 
 		// use basic output stream to write header 
 		OutputStream o = s.getOutputStream();
 		o.write(header.array());
 	}
+
 	/**
 	 * Reads a message from the socket.
 	 *
 	 * @param s The Socket to read data from
 	 * @return False if there are no more messages to receive. True otherwise.
 	 */
-	public static boolean getMessage(Socket s, MessageType looking_for) throws IOException {		
+	public static boolean getMessage(Socket s, MessageType looking_for) throws IOException {		// throws IOException 
 		DataInputStream in = new DataInputStream(s.getInputStream());
-		MessageType response_type = MessageType.get(in.readByte());
+		
+		MessageType response_type = MessageType.get(in.readByte()); // changed from Byte
 		System.out.println(response_type);
 		if (response_type == MessageType.BAD_REQ) {
 			System.out.println("Server said the request was bad!");
+			in.readInt();
 			return false;
 		}
 		int data_len = in.readInt();
-		if(data_len == -1){
+		if(data_len == 255 || data_len == -1){
 			System.out.println("invalid song number");
+			// byte[] res = s.getInputStream().readNBytes(data_len);
 			return false;
 		}
 		if (response_type == looking_for) {
-			System.out.println("response==lookingfor");
-			if (response_type == MessageType.SONG_LEN) {
-				if (data_len == -1){
-					System.out.println("Song number is invalid. ");
-					return true;
-				}
-				byte[] res =  s.getInputStream().readNBytes(data_len);
-				String response_str = new String(res);
-				System.out.println(response_str);
-				return true;
-			}
-			else if (response_type == MessageType.INFO_DATA) {
+			// System.out.println("response==lookingfor");
+			if (response_type == MessageType.INFO_DATA) {
 				System.out.println("Server replied with info!");
-				// //byte[] res =  s.getInputStream().readAllBytes();
-				// byte[] res = new byte[data_len];
-				// s.getInputStream().read(res);
-				// String response_str = new String(res);
-				// System.out.println(response_str);
 				System.out.print(data_len);
-				byte[] res = s.getInputStream().readNBytes(data_len);
+				byte[] res = s.getInputStream().readNBytes(data_len+3);
 				String response_str = new String(res);
 				System.out.println(response_str);
-				return true;
+				return false;
 			}
 			else if (response_type == MessageType.LIST_DATA) {
 				System.out.println("Server replied with list!");
-				byte[] res = s.getInputStream().readNBytes(data_len);
+				byte[] res = s.getInputStream().readNBytes(data_len+3);
 				String response_str = new String(res);
 				System.out.println(response_str);
-				return true;
-			}
-			else if (response_type == MessageType.BAD_REQ) {
-				System.out.println("Server said the request was bad!");
-				return true;
+				return false;
 			}
 			else { // may delete this
 				// Something weird happened here...
