@@ -94,7 +94,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 	std::vector<std::string> song_vector = this->get_songs(dir);
 	// if this song is not valid then just send a -1 and client tries again
 	if (song_num < 0 && song_num >= (int)song_vector.size()){
-		hdr->song_num = -1;
+		hdr->song_num = htonl(-1);
 		ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
 		this->sender = array_sender;
 		//delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
@@ -137,10 +137,10 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	Header* hdr = (Header*)segment;
 
 	hdr->type = INFO_DATA;
-	hdr->song_num = info.size();
+	hdr->song_num = htonl(info.size());
 
 	if (info.size() == 0){
-		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
+		hdr->song_num = htonl(-1); // this means that there was no info about the song or song was invalid
 	}
 
 	memcpy(hdr+1, info.c_str(), info.size());
@@ -216,7 +216,7 @@ void ConnectedClient::list_response(int epoll_fd, string dir) {
 	memset(segment, 0, sizeof(Header) + list_data.size());
 	Header* hdr = (Header*)segment;
 	hdr->type = LIST_DATA;
-	hdr->song_num = list_data.size();
+	hdr->song_num = htonl(list_data.size());
 
 	memcpy(hdr + 1, list_data.c_str(), list_data.size()); // this is copying data into the messsage HELP
 
@@ -254,10 +254,10 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	if (hdr->type == PLAY){
 
 		// QUESTION: will we have to ntohl/htonl?
-        this->play_response(epoll_fd, hdr->song_num, dir);
+        this->play_response(epoll_fd, ntohl(hdr->song_num), dir);
 
     } else if (hdr->type == INFO) {
-		this->info_response(epoll_fd, hdr->song_num, dir);
+		this->info_response(epoll_fd, ntohl(hdr->song_num), dir);
 	} else if (hdr->type == LIST) {
 		this->list_response(epoll_fd, dir);
 	}else if (hdr->type == DISCONNECT) {
