@@ -137,6 +137,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	Header* hdr = (Header*)segment;
 
 	hdr->type = INFO_DATA;
+	hdr->song_num = info.size();
 
 	if (info.size() == 0){
 		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
@@ -215,6 +216,7 @@ void ConnectedClient::list_response(int epoll_fd, string dir) {
 	memset(segment, 0, sizeof(Header) + list_data.size());
 	Header* hdr = (Header*)segment;
 	hdr->type = LIST_DATA;
+	hdr->song_num = list_data.size();
 
 	memcpy(hdr + 1, list_data.c_str(), list_data.size()); // this is copying data into the messsage HELP
 
@@ -246,7 +248,7 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	cout << "Received data: ";
 	for (int i = 0; i < bytes_received; i++)
 		cout << data[i];
-
+	cout << hdr->type;
 	cout << "\n";
 
 	if (hdr->type == PLAY){
