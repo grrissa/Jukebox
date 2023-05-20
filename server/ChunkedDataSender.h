@@ -63,7 +63,6 @@ class FileSender : public virtual ChunkedDataSender {
   private:
 	std::string filename; // the file of data to send
 	std::ifstream file;
-	size_t file_size; // length of the file to send (in bytes)
 	ssize_t curr_loc = 0;
 
 
@@ -71,7 +70,7 @@ class FileSender : public virtual ChunkedDataSender {
 	/**
 	 * Constructor for FileSender class.
 	 */
-	FileSender(std::string filename, string dir);
+	FileSender(std::string filename);
 
 	/**
 	 * Destructor for ArraySender class.
