@@ -122,7 +122,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 	this->send_message(epoll_fd, array_sender);
 
 	// this should be sending the actualy song file in chunks...
-	FileSender *file_sender = new FileSender(filename, dir);
+	FileSender *file_sender = new FileSender(dir + filename);
 	this->sender = file_sender;
 	this->send_message(epoll_fd, file_sender);
 }
@@ -140,7 +140,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	Header* hdr = (Header*)segment;
 
 	hdr->type = INFO_DATA;
-	hdr->song_num = htonl(info.size());
+	hdr->song_num = info.size();
 
 	if (info.size() == 0){
 		hdr->song_num = htonl(-1); // this means that there was no info about the song or song was invalid
