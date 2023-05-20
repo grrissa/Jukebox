@@ -142,7 +142,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	if (info.size() == 0){
 		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
 	}
-
+	cout << info;
 	memcpy(hdr+1, info.c_str(), info.size());
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + info.size());
 	this->sender = array_sender;
