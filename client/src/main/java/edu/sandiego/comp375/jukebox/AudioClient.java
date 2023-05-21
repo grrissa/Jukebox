@@ -69,8 +69,9 @@ public class AudioClient {
 
 							//read header
 							MessageType response_type = MessageType.get(i.readByte());
+							System.out.println(response_type);
 							int data_len = i.readInt();
-							if(data_len == -1){
+							if(data_len == 255){
 								System.out.println("song does not exist");
 							}
 							else{
@@ -121,7 +122,26 @@ public class AudioClient {
 							sendHeader(socket, MessageType.INFO, song_num);
 
 							// keep calling getMessage until 
-							while (getMessage(socket, MessageType.INFO_DATA));
+							//while (getMessage(socket, MessageType.INFO_DATA));
+							//read header
+							DataInputStream i = new DataInputStream(socket.getInputStream());
+							MessageType response_type = MessageType.get(i.readByte());
+							int data_len = i.readInt();
+							System.out.println(data_len);
+							if(data_len == 255){
+								System.out.println("Invalid Song Number");
+							}
+							else{
+							byte[] buffer = new byte[1024];
+							int read;
+							while ((read = in.read(buffer)) != -1) {
+								String output = new String(buffer, 0, read);
+								System.out.print(output);
+								System.out.flush();
+								if (output.charAt(output.length() - 1) == '\n') {
+									break;
+								}
+							}}
 						} catch (Exception e) {
 							System.out.println(e);
 						}
@@ -220,10 +240,6 @@ public class AudioClient {
 				return false;
 			}
 		}
-		// else if (response_type == MessageType.BAD_REQ) {
-		// 	System.out.println("Server said the request was bad!");
-		// 	return false;
-		// }
 		else{
 			System.out.println("else");
 			return false;
