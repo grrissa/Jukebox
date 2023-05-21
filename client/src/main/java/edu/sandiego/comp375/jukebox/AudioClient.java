@@ -66,7 +66,7 @@ public class AudioClient {
 							DataInputStream i = new DataInputStream(socket.getInputStream());
 							int song_num = Integer.parseInt(command[1]);
 							sendHeader(socket, MessageType.PLAY, song_num);
-
+							System.out.println(song_num);
 							//read header
 							MessageType response_type = MessageType.get(i.readByte());
 							System.out.println(response_type);
@@ -88,6 +88,7 @@ public class AudioClient {
 								player.start();
 							}
 						} catch (Exception e) {
+							System.out.println("here");
 							System.out.println(e);
 						}
 					}
