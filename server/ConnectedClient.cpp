@@ -297,7 +297,7 @@ void ConnectedClient::send_message(int epoll_fd, ChunkedDataSender *sender){
 		// QUESTION
 		struct epoll_event epoll_out;
         epoll_out.data.fd = this->client_fd;
-        epoll_out.events = EPOLLOUT;
+        epoll_out.events = EPOLLOUT | EPOLLRDHUP;
 
         if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
             perror("sending message");
@@ -333,7 +333,7 @@ void ConnectedClient::continue_sending(int epoll_fd){
         epoll_out.data.fd = this->client_fd;
         epoll_out.events = EPOLLOUT;
 
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, this->client_fd, &epoll_out) == -1) {
             perror("sending message");
             exit(EXIT_FAILURE);
         }
