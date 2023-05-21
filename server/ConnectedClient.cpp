@@ -143,7 +143,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	hdr->song_num = info.size();
 
 	if (info.size() == 0){
-		hdr->song_num = htonl(-1); // this means that there was no info about the song or song was invalid
+		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
 	}
 
 	cout << info;
