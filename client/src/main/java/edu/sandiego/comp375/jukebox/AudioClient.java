@@ -74,7 +74,11 @@ public class AudioClient {
 							if(data_len == 255){
 								System.out.println("song does not exist");
 							}
+							
 							else{
+								i.readByte();
+								i.readByte();
+								i.readByte();
 								String output = "";
 								byte[] b = new byte[1024];
 								int bytes_read;
@@ -90,6 +94,7 @@ public class AudioClient {
 						} catch (Exception e) {
 							System.out.println("here");
 							System.out.println(e);
+							break;
 						}
 					}
 				}
