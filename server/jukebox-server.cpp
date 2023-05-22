@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
 	server_ev.data.fd = serv_sock;
 	server_ev.events = EPOLLIN;
 
-	int x = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, serv_sock, &server_ev);
+	int x = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, serv_sock, (struct epoll_event*)&server_ev);
 	if (x == -1) {
 		perror("epoll_ctl");
 		exit(EXIT_FAILURE);
@@ -353,4 +353,5 @@ void event_loop(int epoll_fd, int server_socket, const char *dir) {
             }
         }
     }
+	clients.clear();
 }
