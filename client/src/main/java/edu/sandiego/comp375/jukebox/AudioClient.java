@@ -28,11 +28,6 @@ enum MessageType {
 	}
 }
 
-// public class Header {
-// 	int song_num;
-// 	MessageType type;
-// }
-
 /**
  * Class representing a client to our Jukebox.
  */
@@ -41,12 +36,11 @@ public class AudioClient {
 		Scanner s = new Scanner(System.in);
 		BufferedInputStream in = null;
 		Thread player = new Thread();
-		// Socket socket;
 
 		System.out.println("Client: Connecting to "+args[0]+" port "+args[1]);
 		int port_num = Integer.parseInt(args[1]);
-		Socket socket = new Socket(args[0],port_num);//"127.0.0.1", 7102); // moved this outside the if (command) statements
-		in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
+		Socket socket = new Socket(args[0],port_num);
+		in = new BufferedInputStream(socket.getInputStream(), 2048); 
 		while (true) {
 			System.out.print(">> ");
 			String c = s.nextLine();
@@ -59,6 +53,7 @@ public class AudioClient {
 							//checking that the song number is a number
 							if (player.isAlive()){
 								player.stop(); // stop music
+								//player.join();
 								// reset socket and input stream
 								socket = new Socket(args[0], port_num);
 								in = new BufferedInputStream(socket.getInputStream(), 2048);
@@ -75,10 +70,8 @@ public class AudioClient {
 								}
 								sendHeader(temp, MessageType.PLAY, song_num);
 
-								System.out.println(song_num);
 								//read header
 								MessageType response_type = MessageType.get(i.readByte());
-								System.out.println(response_type);
 								int data_len = i.readInt();
 								if(data_len == 255){
 									System.out.println("Song does not exist.");
@@ -112,31 +105,7 @@ public class AudioClient {
 			else if (command[0].equals("list")) {
 				if (command.length == 1){
 					sendHeader(socket, MessageType.LIST, 0);
-					// keep calling getMessage until 
-					//while (getMessage(socket, MessageType.LIST_DATA));
-					DataInputStream i = new DataInputStream(socket.getInputStream());
-					MessageType response_type = MessageType.get(i.readByte()); // changed from Byte
-					int data_len = i.readInt();
-					if(data_len == 255 || data_len == -1){
-						System.out.println("Invalid song number.");
-						// byte[] res = s.getInputStream().readNBytes(data_len);
-						//return false;
-					}else{
-						byte[] buffer = new byte[1024];
-						int read;
-						while ((read = in.read(buffer)) != -1) {
-							String output = new String(buffer, 0, read);
-							System.out.print(output);
-							System.out.flush();
-							if (output.charAt(output.length() - 1) == '\n') {
-								break;
-							}
-						}
-						
-					}
-					// byte[] res = socket.getInputStream().readNBytes(data_len+3);
-					// String response_str = new String(res);
-					// System.out.println(response_str);
+					getMessage(socket, in);
 				}
 				else{
 					System.err.println("ERROR: If you would like the songs to be listed, please just type 'list'.");
@@ -149,37 +118,12 @@ public class AudioClient {
 						if (command.length == 2){
 							try {
 								int song_num = Integer.parseInt(command[1]);
-								System.out.println(song_num);
 								if (song_num < 0){
 									System.err.println("ERROR: Song number needs to be positive.");
 									continue;
 								}
 								sendHeader(socket, MessageType.INFO, song_num);
-
-								// keep calling getMessage until 
-								//while (getMessage(socket, MessageType.INFO_DATA));
-								//read header
-								DataInputStream i = new DataInputStream(socket.getInputStream());
-								MessageType response_type = MessageType.get(i.readByte());
-								int data_len = i.readInt();
-								System.out.println(data_len);
-								if(data_len == 255){
-									System.out.println("Song does not have an info file.");
-									byte[] res = socket.getInputStream().readNBytes(3);
-								}
-								else{
-									byte[] buffer = new byte[1024];
-									int read;
-									while ((read = in.read(buffer)) != -1) {
-										String output = new String(buffer, 0, read);
-										System.out.print(output);
-										System.out.flush();
-										if (output.charAt(output.length() - 1) == '\n') {
-											break;
-										}
-									}
-									
-								}
+								getMessage(socket, in);
 							} catch (Exception e) {
 								System.out.println(e);
 							}
@@ -243,47 +187,25 @@ public class AudioClient {
 	 * @param s The Socket to read data from
 	 * @return False if there are no more messages to receive. True otherwise.
 	 */
-	public static boolean getMessage(Socket s, MessageType looking_for) throws IOException {		// throws IOException 
-		DataInputStream in = new DataInputStream(s.getInputStream());
-		
-		MessageType response_type = MessageType.get(in.readByte()); // changed from Byte
-		System.out.println(response_type);
-		if (response_type == MessageType.BAD_REQ) {
-			System.out.println("Server said the request was bad!");
-			in.readInt();
-			return false;
-		}
-		int data_len = in.readInt();
-		if(data_len == 255 || data_len == -1){
-			System.out.println("invalid song number");
-			// byte[] res = s.getInputStream().readNBytes(data_len);
-			return false;
-		}
-		if (response_type == looking_for) {
-			// System.out.println("response==lookingfor");
-			if (response_type == MessageType.INFO_DATA) {
-				System.out.println("Server replied with info!");
-				System.out.print(data_len);
-				byte[] res = s.getInputStream().readNBytes(data_len+3);
-				String response_str = new String(res);
-				System.out.println(response_str);
-				return false;
-			}
-			else if (response_type == MessageType.LIST_DATA) {
-				System.out.println("Server replied with list!");
-				byte[] res = s.getInputStream().readNBytes(data_len+3);
-				String response_str = new String(res);
-				System.out.println(response_str);
-				return false;
-			}
-			else { // may delete this
-				// Something weird happened here...
-				return false;
-			}
+	public static void getMessage(Socket socket, BufferedInputStream in) throws IOException {		// throws IOException 
+		DataInputStream i = new DataInputStream(socket.getInputStream());
+		MessageType response_type = MessageType.get(i.readByte());
+		int data_len = i.readInt();
+		if(data_len == 255){
+			byte[] res = socket.getInputStream().readNBytes(3);
 		}
 		else{
-			System.out.println("else");
-			return false;
+			byte[] buffer = new byte[1024];
+			int read;
+			while ((read = in.read(buffer)) != -1) {
+				String output = new String(buffer, 0, read);
+				System.out.print(output);
+				System.out.flush();
+				if (output.charAt(output.length() - 1) == '\n') {
+					break;
+				}
+			}
+			
 		}
 	}
 }
