@@ -89,7 +89,8 @@ int main(int argc, char **argv) {
 	server_ev.data.fd = serv_sock;
 	server_ev.events = EPOLLIN;
 
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, serv_sock, &server_ev) == -1) {
+	int x = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, serv_sock, &server_ev);
+	if (x == -1) {
 		perror("epoll_ctl");
 		exit(EXIT_FAILURE);
 	}
