@@ -121,10 +121,22 @@ public class AudioClient {
 						System.out.println("Invalid song number.");
 						// byte[] res = s.getInputStream().readNBytes(data_len);
 						//return false;
+					}else{
+						byte[] buffer = new byte[1024];
+						int read;
+						while ((read = in.read(buffer)) != -1) {
+							String output = new String(buffer, 0, read);
+							System.out.print(output);
+							System.out.flush();
+							if (output.charAt(output.length() - 1) == '\n') {
+								break;
+							}
+						}
+						
 					}
-					byte[] res = socket.getInputStream().readNBytes(data_len+3);
-					String response_str = new String(res);
-					System.out.println(response_str);
+					// byte[] res = socket.getInputStream().readNBytes(data_len+3);
+					// String response_str = new String(res);
+					// System.out.println(response_str);
 				}
 				else{
 					System.err.println("ERROR: If you would like the songs to be listed, please just type 'list'.");
