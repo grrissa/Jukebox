@@ -88,7 +88,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 
 void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
-	// send the song length
+	//send the song length
 	char *segment = new char[sizeof(Header)];
 	memset(segment, 0, sizeof(Header));
 	Header* hdr = (Header*)segment;
@@ -142,7 +142,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	hdr->type = INFO_DATA;
 	hdr->song_num = info.size();
 
-	if (info.size() == 0){
+	if (info.empty()){
 		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
 	}
 
@@ -324,23 +324,21 @@ void ConnectedClient::continue_sending(int epoll_fd){
 	}
 	cout << "sent " << total_bytes_sent << " bytes to client\n";
 
-	if (num_bytes_sent < 0) {
+	this->state = SENDING;
 
-		this->state = SENDING;
+	// QUESTION
+	struct epoll_event epoll_out;
+	epoll_out.data.fd = this->client_fd;
+	epoll_out.events = EPOLLOUT;
 
-		// QUESTION
-		struct epoll_event epoll_out;
-        epoll_out.data.fd = this->client_fd;
-        epoll_out.events = EPOLLOUT;
+	if (num_bytes_sent >= 0) {
 
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, this->client_fd, &epoll_out) == -1) {
+		// Sent everything with no problem so we are done with our ArraySender
+		// object.
+		if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, this->client_fd, &epoll_out) == -1) {
             perror("sending message");
             exit(EXIT_FAILURE);
         }
-    }
-	else {
-		// Sent everything with no problem so we are done with our ArraySender
-		// object.
 		delete this->sender;
 	}
 }
