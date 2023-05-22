@@ -63,9 +63,13 @@ public class AudioClient {
 						// 	in = new BufferedInputStream(socket.getInputStream(), 2048);
 						// }
 						try {
-							DataInputStream i = new DataInputStream(socket.getInputStream());
+							
+							Socket temp = new Socket(args[0],Integer.parseInt(args[1]));
+							DataInputStream i = new DataInputStream(temp.getInputStream());
+							BufferedInputStream temp_in = new BufferedInputStream(temp.getInputStream(), 2048);
 							int song_num = Integer.parseInt(command[1]);
-							sendHeader(socket, MessageType.PLAY, song_num);
+							sendHeader(temp, MessageType.PLAY, song_num);
+
 							System.out.println(song_num);
 							//read header
 							MessageType response_type = MessageType.get(i.readByte());
@@ -73,26 +77,13 @@ public class AudioClient {
 							int data_len = i.readInt();
 							if(data_len == 255){
 								System.out.println("Song does not exist.");
+								byte[] res = temp.getInputStream().readNBytes(3); // clear out rest of header
 							}
-							
-							else{
-								// i.readByte();
-								// i.readByte();
-								// i.readByte();
-								String output = "";
-								byte[] b = new byte[1024];
-								int bytes_read;
-								while ((bytes_read = in.read(b)) != -1){
-									output = new String(b, 0, bytes_read);
-									if (output.charAt(output.length() -1) == '\n'){
-										break;
-									}
-								}								
-								player = new Thread(new AudioPlayerThread(in));
+							else{							
+								player = new Thread(new AudioPlayerThread(temp_in));
 								player.start();
 							}
 						} catch (Exception e) {
-							System.out.println("here");
 							System.out.println(e);
 							break;
 						}
@@ -146,18 +137,21 @@ public class AudioClient {
 							System.out.println(data_len);
 							if(data_len == 255){
 								System.out.println("Song does not have an info file.");
+								byte[] res = socket.getInputStream().readNBytes(3);
 							}
 							else{
-							byte[] buffer = new byte[1024];
-							int read;
-							while ((read = in.read(buffer)) != -1) {
-								String output = new String(buffer, 0, read);
-								System.out.print(output);
-								System.out.flush();
-								if (output.charAt(output.length() - 1) == '\n') {
-									break;
+								byte[] buffer = new byte[1024];
+								int read;
+								while ((read = in.read(buffer)) != -1) {
+									String output = new String(buffer, 0, read);
+									System.out.print(output);
+									System.out.flush();
+									if (output.charAt(output.length() - 1) == '\n') {
+										break;
+									}
 								}
-							}}
+								
+							}
 						} catch (Exception e) {
 							System.out.println(e);
 						}
