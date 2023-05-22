@@ -328,16 +328,15 @@ void ConnectedClient::continue_sending(int epoll_fd){
 
 	this->state = SENDING;
 
-	// QUESTION
 	struct epoll_event epoll_out;
 	epoll_out.data.fd = this->client_fd;
-	epoll_out.events = EPOLLOUT | EPOLLRDHUP;
+	epoll_out.events = EPOLLOUT;
 
 	if (num_bytes_sent >= 0) {
 
 		// Sent everything with no problem so we are done with our ArraySender
 		// object.
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
+		if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, this->client_fd, &epoll_out) == -1) {
             perror("sending message");
             exit(EXIT_FAILURE);
         }

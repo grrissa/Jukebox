@@ -80,7 +80,7 @@ ssize_t FileSender::send_next_chunk(int sock_fd) {
 		this->curr_loc += num_bytes_sent;
 		return num_bytes_sent;
 	}
-	else if (num_bytes_sent < 0 && errno == EAGAIN){
+	else if (num_bytes_sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)){
 		return -1;
 	}
 	else {
