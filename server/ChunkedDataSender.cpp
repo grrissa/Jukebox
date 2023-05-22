@@ -66,14 +66,12 @@ FileSender::FileSender(std::string filename) //file(filename, std::ios::binary)
 
 ssize_t FileSender::send_next_chunk(int sock_fd) {
 	//std::cout << "file to be opened "<< this->filename << "\n";
-	//this->file.open((this->filename), std::ios::binary );
-	//std::ifstream this->file.open(this->filename, std::ios::binary);
 	//std::cout << "opened file\n";
-	char *chunk = new char[CHUNK_SIZE];
+	char chunk[CHUNK_SIZE];
 	memset(chunk, 0, CHUNK_SIZE);
 
 	this->file.seekg(this->curr_loc);
-	this->file.read(chunk, CHUNK_SIZE); // read up to buffer_size bytes into file_data buffer
+	this->file.read((char *)&chunk, CHUNK_SIZE); // read up to buffer_size bytes into file_data buffer
 	int bytes_in_chunk = this->file.gcount();
 	//std::cout << bytes_in_chunk <<"\n";
 	ssize_t num_bytes_sent = send(sock_fd, chunk, bytes_in_chunk, 0);

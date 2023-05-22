@@ -94,7 +94,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 	// Header* hdr = (Header*)segment;
 	// hdr->type = SONG_LEN;
 
-	// std::vector<std::string> song_vector = this->get_songs(dir);
+	std::vector<std::string> song_vector = this->get_songs(dir);
 	// // if this song is not valid then just send a -1 and client tries again
 	// if (song_num < 0 && song_num >= (int)song_vector.size()){
 	// 	hdr->song_num = -1;
@@ -107,7 +107,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	// std::uintmax_t song_num_bytes = 0;
 	// // finding the song in the directory
-	// string filename = song_vector[song_num] + ".mp3";
+	string filename = song_vector[song_num] + ".mp3";
     // for(auto& entry: fs::directory_iterator(dir)) {
     //     if (entry.is_regular_file() && entry.path().filename() == filename){			
 	// 		song_num_bytes = fs::file_size(entry);
