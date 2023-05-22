@@ -88,7 +88,7 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 
 void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
-	send the song length
+	//send the song length
 	char *segment = new char[sizeof(Header)];
 	memset(segment, 0, sizeof(Header));
 	Header* hdr = (Header*)segment;
