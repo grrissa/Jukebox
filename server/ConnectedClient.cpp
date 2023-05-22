@@ -179,10 +179,12 @@ string ConnectedClient::get_info(string dir, int song_num){
 	std::string str(dir);
 
 	std::vector<std::string> song_vector = this->get_songs(dir);
-	if (song_num < 0 && song_num >= (int)song_vector.size()){ // checking if this is a valid song_num
-		return "";
+	if (song_num >= 0 && song_num < (int)song_vector.size()){ // checking if this is a valid song_num
+		; 
 	}
-
+	else{
+		return "Song number is invalid. \n";
+	}
 	// finding the song in the directory
 	string filename = song_vector[song_num] + ".mp3.info";
 	cout << filename << "\n";
@@ -206,7 +208,7 @@ string ConnectedClient::get_info(string dir, int song_num){
     }
 
 	// this is if we couln't find info for the requested song_num
-	return "";
+	return "Requested song has no info. \n";
 
 }
 
@@ -329,13 +331,13 @@ void ConnectedClient::continue_sending(int epoll_fd){
 	// QUESTION
 	struct epoll_event epoll_out;
 	epoll_out.data.fd = this->client_fd;
-	epoll_out.events = EPOLLOUT;
+	epoll_out.events = EPOLLOUT | EPOLLRDHUP;
 
 	if (num_bytes_sent >= 0) {
 
 		// Sent everything with no problem so we are done with our ArraySender
 		// object.
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, this->client_fd, &epoll_out) == -1) {
+		if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, this->client_fd, &epoll_out) == -1) {
             perror("sending message");
             exit(EXIT_FAILURE);
         }
