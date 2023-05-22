@@ -337,7 +337,7 @@ void event_loop(int epoll_fd, int server_socket, const char *dir) {
 			// ie: its ok to write to the socket because buffer has space and can send to client now
 			// Note: You may want/need to make this an else if, depending on
 			// how you are handling clients.
-			if ((events[n].events & EPOLLOUT) != 0) {
+			else if ((events[n].events & EPOLLOUT) != 0) {
 				/* 
 				 * If you set things up correctly, you should only reach this
 				 * point if you started sending a response, but had to stop.
