@@ -88,38 +88,38 @@ void ConnectedClient::send_dummy_response(int epoll_fd) {
 
 void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
-	// send the song length
-	// char *segment = new char[sizeof(Header)];
-	// memset(segment, 0, sizeof(Header));
-	// Header* hdr = (Header*)segment;
-	// hdr->type = SONG_LEN;
+	send the song length
+	char *segment = new char[sizeof(Header)];
+	memset(segment, 0, sizeof(Header));
+	Header* hdr = (Header*)segment;
+	hdr->type = SONG_LEN;
 
 	std::vector<std::string> song_vector = this->get_songs(dir);
-	// // if this song is not valid then just send a -1 and client tries again
-	// if (song_num < 0 && song_num >= (int)song_vector.size()){
-	// 	hdr->song_num = -1;
-	// 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
-	// 	this->sender = array_sender;
-	// 	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
-	// 	this->send_message(epoll_fd, array_sender);
-	// 	return;
-	// }
+	// if this song is not valid then just send a -1 and client tries again
+	if (song_num < 0 && song_num >= (int)song_vector.size()){
+		hdr->song_num = -1;
+		ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
+		this->sender = array_sender;
+		delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+		this->send_message(epoll_fd, array_sender);
+		return;
+	}
 
-	// std::uintmax_t song_num_bytes = 0;
-	// // finding the song in the directory
+	std::uintmax_t song_num_bytes = 0;
+	// finding the song in the directory
 	string filename = song_vector[song_num] + ".mp3";
-    // for(auto& entry: fs::directory_iterator(dir)) {
-    //     if (entry.is_regular_file() && entry.path().filename() == filename){			
-	// 		song_num_bytes = fs::file_size(entry);
-	// 	}   
-	// 	break;         
-    // }
+    for(auto& entry: fs::directory_iterator(dir)) {
+        if (entry.is_regular_file() && entry.path().filename() == filename){			
+			song_num_bytes = fs::file_size(entry);
+		}   
+		break;         
+    }
 
-	// hdr->song_num = song_num_bytes;
-	// ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
-	// this->sender = array_sender;
-	// delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
-	// this->send_message(epoll_fd, array_sender);
+	hdr->song_num = song_num_bytes;
+	ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
+	this->sender = array_sender;
+	delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
+	this->send_message(epoll_fd, array_sender);
 
 	// this should be sending the actualy song file in chunks...
 	FileSender *file_sender = new FileSender(dir + filename);
