@@ -179,10 +179,12 @@ string ConnectedClient::get_info(string dir, int song_num){
 	std::string str(dir);
 
 	std::vector<std::string> song_vector = this->get_songs(dir);
-	if (song_num < 0 && song_num >= (int)song_vector.size()){ // checking if this is a valid song_num
-		return "";
+	if (song_num >= 0 && song_num < (int)song_vector.size()){ // checking if this is a valid song_num
+		; 
 	}
-
+	else{
+		return "Song number is invalid. \n";
+	}
 	// finding the song in the directory
 	string filename = song_vector[song_num] + ".mp3.info";
 	cout << filename << "\n";
@@ -206,7 +208,7 @@ string ConnectedClient::get_info(string dir, int song_num){
     }
 
 	// this is if we couln't find info for the requested song_num
-	return "";
+	return "Requested song has no info. \n";
 
 }
 

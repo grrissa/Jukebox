@@ -85,7 +85,7 @@ ssize_t FileSender::send_next_chunk(int sock_fd) {
 	}
 	else {
 		perror("send_next_chunk send in file sender");
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
 	}
 
 	return 0;
