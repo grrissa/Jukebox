@@ -142,7 +142,7 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	hdr->type = INFO_DATA;
 	hdr->song_num = info.size();
 
-	if (info.size() == 0){
+	if (info.empty()){
 		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
 	}
 
