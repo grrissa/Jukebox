@@ -40,12 +40,12 @@ public class AudioClient {
 	public static void main(String[] args) throws Exception {
 		Scanner s = new Scanner(System.in);
 		BufferedInputStream in = null;
-		Thread player = null;
+		Thread player = new Thread();
 		// Socket socket;
 
 		System.out.println("Client: Connecting to "+args[0]+" port "+args[1]);
-
-		Socket socket = new Socket(args[0],Integer.parseInt(args[1]));//"127.0.0.1", 7102); // moved this outside the if (command) statements
+		int port_num = Integer.parseInt(args[1]);
+		Socket socket = new Socket(args[0],port_num);//"127.0.0.1", 7102); // moved this outside the if (command) statements
 		in = new BufferedInputStream(socket.getInputStream(), 2048); // QUESTION: what is in
 		while (true) {
 			System.out.print(">> ");
@@ -54,39 +54,48 @@ public class AudioClient {
 
 			if (command[0].equals("play")){
 				try {
-					if (socket.isConnected()) {
-						// checking that the song number is a number
-						// if (player.isAlive()){
-						// 	player.stop(); // stop music
-						// 	// reset socket and input stream
-						// 	socket = new Socket("127.0.0.1", 6666);
-						// 	in = new BufferedInputStream(socket.getInputStream(), 2048);
-						// }
-						try {
-							
-							Socket temp = new Socket(args[0],Integer.parseInt(args[1]));
-							DataInputStream i = new DataInputStream(temp.getInputStream());
-							BufferedInputStream temp_in = new BufferedInputStream(temp.getInputStream(), 2048);
-							int song_num = Integer.parseInt(command[1]);
-							sendHeader(temp, MessageType.PLAY, song_num);
+					if (command.length == 2){
+						if (socket.isConnected()) {
+							//checking that the song number is a number
+							if (player.isAlive()){
+								player.stop(); // stop music
+								// reset socket and input stream
+								socket = new Socket(args[0], port_num);
+								in = new BufferedInputStream(socket.getInputStream(), 2048);
+							}
+							try {
+								
+								Socket temp = new Socket(args[0],port_num);
+								DataInputStream i = new DataInputStream(temp.getInputStream());
+								BufferedInputStream temp_in = new BufferedInputStream(temp.getInputStream(), 2048);
+								int song_num = Integer.parseInt(command[1]);
+								if (song_num < 0){
+									System.err.println("ERROR: Song number needs to be positive.");
+									continue;
+								}
+								sendHeader(temp, MessageType.PLAY, song_num);
 
-							System.out.println(song_num);
-							//read header
-							MessageType response_type = MessageType.get(i.readByte());
-							System.out.println(response_type);
-							int data_len = i.readInt();
-							if(data_len == 255){
-								System.out.println("Song does not exist.");
-								byte[] res = temp.getInputStream().readNBytes(3); // clear out rest of header
+								System.out.println(song_num);
+								//read header
+								MessageType response_type = MessageType.get(i.readByte());
+								System.out.println(response_type);
+								int data_len = i.readInt();
+								if(data_len == 255){
+									System.out.println("Song does not exist.");
+									byte[] res = temp.getInputStream().readNBytes(3); // clear out rest of header
+								}
+								else{							
+									player = new Thread(new AudioPlayerThread(temp_in));
+									player.start();
+								}
+							} catch (Exception e) {
+								System.out.println(e);
+								break;
 							}
-							else{							
-								player = new Thread(new AudioPlayerThread(temp_in));
-								player.start();
-							}
-						} catch (Exception e) {
-							System.out.println(e);
-							break;
 						}
+					}
+					else{
+						System.err.println("ERROR: play format required: play <song_number>");
 					}
 				}
 				catch (Exception e) {
@@ -94,87 +103,97 @@ public class AudioClient {
 				}
 			}
 			else if (command[0].equals("exit")) {
-				// Currently this doesn't actually stop the music from
-				// playing.
-				// Your final solution should make sure that the exit command
-				// causes music to stop playing immediately.
 				System.out.println("Goodbye!");
 				if(player != null){player.stop(); }// stop music hopefully?
+				player.join();
 				socket.close();
 				break;
 			}
 			else if (command[0].equals("list")) {
-				sendHeader(socket, MessageType.LIST, 0);
-				// keep calling getMessage until 
-				//while (getMessage(socket, MessageType.LIST_DATA));
-				DataInputStream i = new DataInputStream(socket.getInputStream());
-				MessageType response_type = MessageType.get(i.readByte()); // changed from Byte
-				int data_len = i.readInt();
-				if(data_len == 255 || data_len == -1){
-					System.out.println("Invalid song number.");
-					// byte[] res = s.getInputStream().readNBytes(data_len);
-					//return false;
+				if (command.length == 1){
+					sendHeader(socket, MessageType.LIST, 0);
+					// keep calling getMessage until 
+					//while (getMessage(socket, MessageType.LIST_DATA));
+					DataInputStream i = new DataInputStream(socket.getInputStream());
+					MessageType response_type = MessageType.get(i.readByte()); // changed from Byte
+					int data_len = i.readInt();
+					if(data_len == 255 || data_len == -1){
+						System.out.println("Invalid song number.");
+						// byte[] res = s.getInputStream().readNBytes(data_len);
+						//return false;
+					}
+					byte[] res = socket.getInputStream().readNBytes(data_len+3);
+					String response_str = new String(res);
+					System.out.println(response_str);
 				}
-				byte[] res = socket.getInputStream().readNBytes(data_len+3);
-				String response_str = new String(res);
-				System.out.println(response_str);
+				else{
+					System.err.println("ERROR: If you would like the songs to be listed, please just type 'list'.");
+				}
 			}
 			else if (command[0].equals("info")) {
 				try {
-					// if (socket.isConnected()) {
+					if (socket.isConnected()) {
 						// checking that the song number is a number
-						try {
-							int song_num = Integer.parseInt(command[1]);
-							System.out.println(song_num);
-							sendHeader(socket, MessageType.INFO, song_num);
-
-							// keep calling getMessage until 
-							//while (getMessage(socket, MessageType.INFO_DATA));
-							//read header
-							DataInputStream i = new DataInputStream(socket.getInputStream());
-							MessageType response_type = MessageType.get(i.readByte());
-							int data_len = i.readInt();
-							System.out.println(data_len);
-							if(data_len == 255){
-								System.out.println("Song does not have an info file.");
-								byte[] res = socket.getInputStream().readNBytes(3);
-							}
-							else{
-								byte[] buffer = new byte[1024];
-								int read;
-								while ((read = in.read(buffer)) != -1) {
-									String output = new String(buffer, 0, read);
-									System.out.print(output);
-									System.out.flush();
-									if (output.charAt(output.length() - 1) == '\n') {
-										break;
-									}
+						if (command.length == 2){
+							try {
+								int song_num = Integer.parseInt(command[1]);
+								System.out.println(song_num);
+								if (song_num < 0){
+									System.err.println("ERROR: Song number needs to be positive.");
+									continue;
 								}
-								
+								sendHeader(socket, MessageType.INFO, song_num);
+
+								// keep calling getMessage until 
+								//while (getMessage(socket, MessageType.INFO_DATA));
+								//read header
+								DataInputStream i = new DataInputStream(socket.getInputStream());
+								MessageType response_type = MessageType.get(i.readByte());
+								int data_len = i.readInt();
+								System.out.println(data_len);
+								if(data_len == 255){
+									System.out.println("Song does not have an info file.");
+									byte[] res = socket.getInputStream().readNBytes(3);
+								}
+								else{
+									byte[] buffer = new byte[1024];
+									int read;
+									while ((read = in.read(buffer)) != -1) {
+										String output = new String(buffer, 0, read);
+										System.out.print(output);
+										System.out.flush();
+										if (output.charAt(output.length() - 1) == '\n') {
+											break;
+										}
+									}
+									
+								}
+							} catch (Exception e) {
+								System.out.println(e);
 							}
-						} catch (Exception e) {
-							System.out.println(e);
+						}else{
+							System.err.println("ERROR: info format required: info <song_number>");
 						}
-					// }
+					}
 				}
 				catch (Exception e) {
 					System.out.println(e);
 				}
 			}
-			// else if (command[0].equals("stop")){
-			// 	try{
-			// 		player.stop(); // stop music
-			// 		// reset socket and input stream
-			// 		socket = new Socket("127.0.0.1", 6666);
-			// 		in = new BufferedInputStream(socket.getInputStream(), 2048);
-			// 	} catch (Exception e){
-			// 		System.out.println("No music is playing!");
-			// 	}
-			// }
+			else if (command[0].equals("stop")){
+				try{
+					player.stop(); // stop music
+					// reset socket and input stream
+					socket = new Socket(args[0], port_num);
+					in = new BufferedInputStream(socket.getInputStream(), 2048);
+				} catch (Exception e){
+					System.out.println("No music is playing!");
+				}
+			}
 			else {
 				System.err.println("ERROR: unknown command");
 			}
-			// socket.close();
+
 		}
 
 		System.out.println("Client: Exiting");
