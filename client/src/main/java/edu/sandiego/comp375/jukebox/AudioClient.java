@@ -35,21 +35,20 @@ public class AudioClient {
 	public static void main(String[] args) throws Exception {
 		Scanner s = new Scanner(System.in);
 		BufferedInputStream in = null;
-		Thread player = new Thread();
 
 		System.out.println("Client: Connecting to "+args[0]+" port "+args[1]);
 		int port_num = Integer.parseInt(args[1]);
 		Socket socket = new Socket(args[0],port_num);
 		in = new BufferedInputStream(socket.getInputStream(), 2048); 
-		
+		Thread player = new Thread();
+
 		while (true) {
 			System.out.print(">> ");
 			String c = s.nextLine();
 			String[] command = c.split(" ");
 			if (player.isAlive()){
-				System.out.println("here");
 				player.stop(); // stop music
-				//player.join();
+				player.join();
 				// reset socket and input stream
 				socket = new Socket(args[0], port_num);
 				in = new BufferedInputStream(socket.getInputStream(), 2048);
@@ -58,34 +57,25 @@ public class AudioClient {
 				try {
 					if (command.length == 2){
 						if (socket.isConnected()) {
-							//checking that the song number is a number
-							
 							try {
-								
-								//Socket temp = new Socket(args[0],port_num);
 								DataInputStream i = new DataInputStream(socket.getInputStream());
-								//BufferedInputStream temp_in = new BufferedInputStream(temp.getInputStream(), 2048);
 								int song_num = Integer.parseInt(command[1]);
-								System.out.println(song_num);
 
 								if (song_num < 0){
 									System.err.println("ERROR: Song number needs to be positive.");
 									continue;
 								}
 								sendHeader(socket, MessageType.PLAY, song_num);
-								System.out.println("header sent");
+
 								//read header
-			
 								MessageType response_type = MessageType.get(i.readByte());
 								int data_len = i.readInt();
-								System.out.println(data_len);
 								if(data_len == 255){
 									System.out.println("Song does not exist.");
 									byte[] res = socket.getInputStream().readNBytes(3); // clear out rest of header
 								}
 								else{				
 									byte[] res = socket.getInputStream().readNBytes(3); // clear out rest of header			
-									System.out.println("reading song");
 									player = new Thread(new AudioPlayerThread(in));
 									player.start();
 								}
@@ -93,7 +83,6 @@ public class AudioClient {
 								System.err.println("ERROR: Please enter a whole number for the song number");
 							} catch (Exception e) {
 								System.out.println(e);
-								break;
 							}
 						}
 					}
@@ -152,7 +141,7 @@ public class AudioClient {
 				try{
 					if (command.length == 1){
 						if(player != null){player.stop(); }
-	
+						player.join();
 						// reset socket and input stream
 						socket = new Socket(args[0], port_num);
 						in = new BufferedInputStream(socket.getInputStream(), 2048);
@@ -214,21 +203,15 @@ public class AudioClient {
 		DataInputStream i = new DataInputStream(socket.getInputStream());
 		MessageType response_type = MessageType.get(i.readByte());
 		int data_len = i.readInt();
-		// if(data_len == 255){
-		// 	byte[] res = socket.getInputStream().readNBytes(3);
-		// }
-		// else{
-			byte[] buffer = new byte[1024];
-			int read;
-			while ((read = in.read(buffer)) != -1) {
-				String output = new String(buffer, 0, read);
-				System.out.print(output);
-				System.out.flush();
-				if (output.charAt(output.length() - 1) == '\n') {
-					break;
-				}
+		byte[] buffer = new byte[1024];
+		int read;
+		while ((read = in.read(buffer)) != -1) {
+			String output = new String(buffer, 0, read);
+			System.out.print(output);
+			System.out.flush();
+			if (output.charAt(output.length() - 1) == '\n') {
+				break;
 			}
-			
-		// }
+		}
 	}
 }
