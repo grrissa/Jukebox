@@ -90,15 +90,15 @@ class ConnectedClient {
 	 * Gets the songs from the directory
 	 *
 	 * @param dir Directory where song is located
+	 * @return vector of all songs in the directory
 	 */
 	std::vector<std::string> get_songs(std::string dir);
 
 	/**
-	 * Sends a response to the client.
-	 * Note that this is just to demonstrate sending to the client: it doesn't
-	 * send anything intelligent.
+	 * Sends a list response to the client.
 	 *
 	 * @param epoll_fd File descriptor for epoll.
+	 * @param dir Directory where song is located
 	 */
 	void list_response(int epoll_fd, std::string dir);
 
