@@ -39,12 +39,16 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 	std::vector<std::string> song_vector = this->get_songs(dir);
 	// if this song is not valid then just send a -1 and client tries again
-	if (song_num < 0 && song_num >= (int)song_vector.size()){
+	if (song_num >= 0 && song_num < (int)song_vector.size()){ // checking if this is a valid song_num
+		; 
+	}
+	else{
 		hdr->song_num = -1;
 		ArraySender *array_sender = new ArraySender(segment, sizeof(Header));
 		this->sender = array_sender;
 		delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 		this->send_message(epoll_fd, array_sender);
+		cout << song_num <<"\n";
 		return;
 	}
 
@@ -74,7 +78,7 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 
 void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
-	cout << "in info response";
+	cout << "in info response\n";
 	string info = this->get_info(dir, song_num);
 
 	// now actually making a INFO_DATA message
@@ -85,9 +89,9 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	hdr->type = INFO_DATA;
 	hdr->song_num = info.size();
 
-	if (info.empty()){
-		hdr->song_num = -1; // this means that there was no info about the song or song was invalid
-	}
+	// if (info.empty()){
+	// 	hdr->song_num = -1; // this means that there was no info about the song or song was invalid
+	// }
 
 	cout << info;
 	memcpy(hdr+1, info.c_str(), info.size());
@@ -204,7 +208,7 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 	cout << "Received data: ";
 	for (int i = 0; i < bytes_received; i++)
 		cout << data[i];
-	cout << hdr->type;
+	cout << hdr->type<< "\n" << hdr->song_num;
 	cout << "\n";
 
 
@@ -212,7 +216,7 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
         this->play_response(epoll_fd, hdr->song_num, dir);
 
     } else if (hdr->type == INFO) {
-		cout << "in info else if";
+		cout << "in info else if\n";
 		this->info_response(epoll_fd, hdr->song_num, dir);
 	} else if (hdr->type == LIST) {
 		this->list_response(epoll_fd, dir);
