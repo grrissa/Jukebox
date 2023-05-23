@@ -48,7 +48,6 @@ public class AudioClient {
 			String[] command = c.split(" ");
 			if (player.isAlive()){ // stop music when another command is entered
 				player.stop(); // stop music
-				player.join();
 				// reset socket and input stream
 				socket = new Socket(args[0], port_num);
 				in = new BufferedInputStream(socket.getInputStream(), 2048);
@@ -97,7 +96,7 @@ public class AudioClient {
 			else if (command[0].equals("exit")) {
 				System.out.println("Goodbye!");
 				if(player != null){player.stop(); }
-				player.join();
+				// player.join();
 				socket.close();
 				s.close();
 				in.close();
@@ -105,7 +104,9 @@ public class AudioClient {
 			}
 			else if (command[0].equals("list")) {
 				if (command.length == 1){
+					// System.out.println("sending header");
 					sendHeader(socket, MessageType.LIST, 0);
+					// System.out.println("sent header");
 					getMessage(socket, in);
 				}
 				else{
@@ -141,7 +142,7 @@ public class AudioClient {
 				try{
 					if (command.length == 1){
 						if(player != null){player.stop(); }
-						player.join();
+						// player.join();
 						// reset socket and input stream
 						socket = new Socket(args[0], port_num);
 						in = new BufferedInputStream(socket.getInputStream(), 2048);
@@ -202,7 +203,10 @@ public class AudioClient {
 	public static void getMessage(Socket socket, BufferedInputStream in) throws IOException {		
 		DataInputStream i = new DataInputStream(socket.getInputStream());
 		MessageType response_type = MessageType.get(i.readByte());
+		// System.out.println(response_type);
 		int data_len = i.readInt();
+		// System.out.println(data_len);
+		byte[] res = socket.getInputStream().readNBytes(3);
 		byte[] buffer = new byte[1024];
 		int read;
 		while ((read = in.read(buffer)) != -1) {
