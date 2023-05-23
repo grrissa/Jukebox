@@ -46,7 +46,7 @@ public class AudioClient {
 			System.out.print(">> ");
 			String c = s.nextLine();
 			String[] command = c.split(" ");
-			if (player.isAlive()){
+			if (player.isAlive()){ // stop music when another command is entered
 				player.stop(); // stop music
 				player.join();
 				// reset socket and input stream
