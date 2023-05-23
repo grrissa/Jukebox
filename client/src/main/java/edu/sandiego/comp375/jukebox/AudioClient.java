@@ -184,12 +184,16 @@ public class AudioClient {
 		// different types of values into their byte representations.
 		// The byte order is set to BIG_ENDIAN, because that is the standard
 		// format for data sent of a network.
-		ByteBuffer header = ByteBuffer.allocate(5);
+		ByteBuffer header = ByteBuffer.allocate(8);
 		header.order(ByteOrder.BIG_ENDIAN);
 
 		// send the header
 		header.put((byte)messageType.ordinal()); // ordinal gets the number associated with the MessageType
+		header.put((byte)0);
+		header.put((byte)0);
+		header.put((byte)0);
 		header.putInt(songNumber);
+		
 
 		// use basic output stream to write header 
 		OutputStream o = s.getOutputStream();
