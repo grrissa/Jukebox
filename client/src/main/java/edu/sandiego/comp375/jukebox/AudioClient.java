@@ -41,23 +41,25 @@ public class AudioClient {
 		int port_num = Integer.parseInt(args[1]);
 		Socket socket = new Socket(args[0],port_num);
 		in = new BufferedInputStream(socket.getInputStream(), 2048); 
+		
 		while (true) {
 			System.out.print(">> ");
 			String c = s.nextLine();
 			String[] command = c.split(" ");
-
+			if (player.isAlive()){
+				System.out.println("here");
+				player.stop(); // stop music
+				//player.join();
+				// reset socket and input stream
+				socket = new Socket(args[0], port_num);
+				in = new BufferedInputStream(socket.getInputStream(), 2048);
+			}
 			if (command[0].equals("play")){
 				try {
 					if (command.length == 2){
 						if (socket.isConnected()) {
 							//checking that the song number is a number
-							if (player.isAlive()){
-								player.stop(); // stop music
-								//player.join();
-								// reset socket and input stream
-								socket = new Socket(args[0], port_num);
-								in = new BufferedInputStream(socket.getInputStream(), 2048);
-							}
+							
 							try {
 								
 								//Socket temp = new Socket(args[0],port_num);
@@ -105,7 +107,7 @@ public class AudioClient {
 			}
 			else if (command[0].equals("exit")) {
 				System.out.println("Goodbye!");
-				if(player != null){player.stop(); }// stop music hopefully?
+				if(player != null){player.stop(); }
 				player.join();
 				socket.close();
 				s.close();
@@ -149,7 +151,8 @@ public class AudioClient {
 			else if (command[0].equals("stop")){
 				try{
 					if (command.length == 1){
-						player.stop(); // stop music
+						if(player != null){player.stop(); }
+	
 						// reset socket and input stream
 						socket = new Socket(args[0], port_num);
 						in = new BufferedInputStream(socket.getInputStream(), 2048);
@@ -204,16 +207,17 @@ public class AudioClient {
 	 * Reads a message from the socket.
 	 *
 	 * @param s The Socket to read data from
+	 * @param in The BufferedInputStream to read data from
 	 * @return False if there are no more messages to receive. True otherwise.
 	 */
-	public static void getMessage(Socket socket, BufferedInputStream in) throws IOException {		// throws IOException 
+	public static void getMessage(Socket socket, BufferedInputStream in) throws IOException {		
 		DataInputStream i = new DataInputStream(socket.getInputStream());
 		MessageType response_type = MessageType.get(i.readByte());
 		int data_len = i.readInt();
-		if(data_len == 255){
-			byte[] res = socket.getInputStream().readNBytes(3);
-		}
-		else{
+		// if(data_len == 255){
+		// 	byte[] res = socket.getInputStream().readNBytes(3);
+		// }
+		// else{
 			byte[] buffer = new byte[1024];
 			int read;
 			while ((read = in.read(buffer)) != -1) {
@@ -225,6 +229,6 @@ public class AudioClient {
 				}
 			}
 			
-		}
+		// }
 	}
 }
