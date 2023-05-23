@@ -48,7 +48,6 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 		this->sender = array_sender;
 		delete[] segment; // The ArraySender creates its own copy of the data so let's delete this copy
 		this->send_message(epoll_fd, array_sender);
-		cout << song_num <<"\n";
 		return;
 	}
 
@@ -78,7 +77,6 @@ void ConnectedClient::play_response(int epoll_fd, int song_num, string dir) {
 
 
 void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
-	cout << "in info response\n";
 	string info = this->get_info(dir, song_num);
 
 	// now actually making a INFO_DATA message
@@ -89,11 +87,6 @@ void ConnectedClient::info_response(int epoll_fd, int song_num, string dir) {
 	hdr->type = INFO_DATA;
 	hdr->song_num = info.size();
 
-	// if (info.empty()){
-	// 	hdr->song_num = -1; // this means that there was no info about the song or song was invalid
-	// }
-
-	cout << info;
 	memcpy(hdr+1, info.c_str(), info.size());
 	ArraySender *array_sender = new ArraySender(segment, sizeof(Header) + info.size());
 	this->sender = array_sender;
@@ -134,9 +127,8 @@ string ConnectedClient::get_info(string dir, int song_num){
 	}
 	// finding the song in the directory
 	string filename = song_vector[song_num] + ".mp3.info";
-	cout << filename << "\n";
+
     for(auto& entry: fs::directory_iterator(dir)) {
-		cout << entry.path().filename() << "\n";
         if (entry.is_regular_file() && entry.path().filename() == filename){
 
 			filename = dir + filename;
@@ -149,7 +141,6 @@ string ConnectedClient::get_info(string dir, int song_num){
 
 			file.close();
 
-			cout << info << "\n";
 			return info;
 		}            
     }
@@ -190,9 +181,6 @@ void ConnectedClient::list_response(int epoll_fd, string dir) {
 }
 
 void ConnectedClient::handle_input(int epoll_fd, string dir) {
-	// QUESTION: so this is the driver... we are doing all of the receiving in here and
-	// then calling send dummy to send the actual data that theyre req?????? how do we pass that data onto send dummy 
-	// should we create a function for each request type from the client
 
 	cout << "Ready to read from client " << this->client_fd << "\n";
 	char data[1024];
@@ -205,19 +193,15 @@ void ConnectedClient::handle_input(int epoll_fd, string dir) {
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Received data: ";
-	for (int i = 0; i < bytes_received; i++)
-		cout << data[i];
-	cout << hdr->type<< "\n" << hdr->song_num;
+	cout << "Received data: \n";
+	cout << "\ttype: " <<hdr->type<< "\n\tsong number: " << ntohl(hdr->song_num);
 	cout << "\n";
 
 
 	if (hdr->type == PLAY){
-        this->play_response(epoll_fd, hdr->song_num, dir);
-
+        this->play_response(epoll_fd, ntohl(hdr->song_num), dir);
     } else if (hdr->type == INFO) {
-		cout << "in info else if\n";
-		this->info_response(epoll_fd, hdr->song_num, dir);
+		this->info_response(epoll_fd, ntohl(hdr->song_num), dir);
 	} else if (hdr->type == LIST) {
 		this->list_response(epoll_fd, dir);
 	}else if (hdr->type == DISCONNECT) {
@@ -243,7 +227,6 @@ void ConnectedClient::send_message(int epoll_fd, ChunkedDataSender *sender){
 		this->state = SENDING;
 		this->sender = sender;
 
-		// QUESTION
 		struct epoll_event epoll_out;
         epoll_out.data.fd = this->client_fd;
         epoll_out.events = EPOLLOUT | EPOLLRDHUP;

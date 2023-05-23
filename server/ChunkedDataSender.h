@@ -53,17 +53,15 @@ class ArraySender : public virtual ChunkedDataSender {
 	virtual ssize_t send_next_chunk(int sock_fd);
 };
 
-// TODO: Create a new class named FileSender that implements the
-// ChunkedDataSender interface. This class should allow the user to send a big
-// file over a socket in chunks.
+
 /**
  * Class that allows sending a file over a network socket.
  */
 class FileSender : public virtual ChunkedDataSender {
   private:
 	std::string filename; // the file of data to send
-	std::ifstream file;
-	ssize_t curr_loc = 0;
+	std::ifstream file; // file that we are going to send the data of
+	ssize_t curr_loc = 0; // index in array where next send will start
 
 
   public:

@@ -83,10 +83,6 @@ ssize_t FileSender::send_next_chunk(int sock_fd) {
 	else if (num_bytes_sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)){
 		return -1;
 	}
-	else {
-		perror("send_next_chunk send in file sender");
-		//exit(EXIT_FAILURE);
-	}
 
 	return 0;
 
