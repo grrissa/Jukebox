@@ -60,27 +60,35 @@ public class AudioClient {
 							}
 							try {
 								
-								Socket temp = new Socket(args[0],port_num);
-								DataInputStream i = new DataInputStream(temp.getInputStream());
-								BufferedInputStream temp_in = new BufferedInputStream(temp.getInputStream(), 2048);
+								//Socket temp = new Socket(args[0],port_num);
+								DataInputStream i = new DataInputStream(socket.getInputStream());
+								//BufferedInputStream temp_in = new BufferedInputStream(temp.getInputStream(), 2048);
 								int song_num = Integer.parseInt(command[1]);
+								System.out.println(song_num);
+
 								if (song_num < 0){
 									System.err.println("ERROR: Song number needs to be positive.");
 									continue;
 								}
-								sendHeader(temp, MessageType.PLAY, song_num);
-
+								sendHeader(socket, MessageType.PLAY, song_num);
+								System.out.println("header sent");
 								//read header
+			
 								MessageType response_type = MessageType.get(i.readByte());
 								int data_len = i.readInt();
+								System.out.println(data_len);
 								if(data_len == 255){
 									System.out.println("Song does not exist.");
-									byte[] res = temp.getInputStream().readNBytes(3); // clear out rest of header
+									byte[] res = socket.getInputStream().readNBytes(3); // clear out rest of header
 								}
-								else{							
-									player = new Thread(new AudioPlayerThread(temp_in));
+								else{				
+									byte[] res = socket.getInputStream().readNBytes(3); // clear out rest of header			
+									System.out.println("reading song");
+									player = new Thread(new AudioPlayerThread(in));
 									player.start();
 								}
+							} catch(NumberFormatException e){
+								System.err.println("ERROR: Please enter a whole number for the song number");
 							} catch (Exception e) {
 								System.out.println(e);
 								break;
@@ -100,6 +108,8 @@ public class AudioClient {
 				if(player != null){player.stop(); }// stop music hopefully?
 				player.join();
 				socket.close();
+				s.close();
+				in.close();
 				break;
 			}
 			else if (command[0].equals("list")) {
@@ -138,10 +148,15 @@ public class AudioClient {
 			}
 			else if (command[0].equals("stop")){
 				try{
-					player.stop(); // stop music
-					// reset socket and input stream
-					socket = new Socket(args[0], port_num);
-					in = new BufferedInputStream(socket.getInputStream(), 2048);
+					if (command.length == 1){
+						player.stop(); // stop music
+						// reset socket and input stream
+						socket = new Socket(args[0], port_num);
+						in = new BufferedInputStream(socket.getInputStream(), 2048);
+					}else{
+						System.err.println("ERROR: If you would like the song to stop playing please just type 'stop'.");
+					}
+
 				} catch (Exception e){
 					System.out.println("No music is playing!");
 				}
