@@ -104,18 +104,15 @@ class ConnectedClient {
 
 
 	/**
-	 * Sends a response to the client.
-	 * Note that this is just to demonstrate sending to the client: it doesn't
-	 * send anything intelligent.
+	 * Sends the message
 	 *
 	 * @param epoll_fd File descriptor for epoll.
+	 * @param sender what actually sends the data
 	 */
 	void send_message(int epoll_fd, ChunkedDataSender *sender);
 
 	/**
-	 * Sends a response to the client.
-	 * Note that this is just to demonstrate sending to the client: it doesn't
-	 * send anything intelligent.
+	 * Continues sending if it has to stop for some reason
 	 *
 	 * @param epoll_fd File descriptor for epoll.
 	 */
@@ -127,6 +124,7 @@ class ConnectedClient {
 	 * Handles new input from the client.
 	 *
 	 * @param epoll_fd File descriptor for epoll.
+	 * @param dir String containing the name of the directory
 	 */
 	void handle_input(int epoll_fd, std::string dir);
 
