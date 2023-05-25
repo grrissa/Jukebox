@@ -49,6 +49,7 @@ public class AudioClient {
 			if (player.isAlive()){ // stop music when another command is entered
 				player.stop(); // stop music
 				// reset socket and input stream
+				socket.close();
 				socket = new Socket(args[0], port_num);
 				in = new BufferedInputStream(socket.getInputStream(), 2048);
 			}
@@ -144,8 +145,8 @@ public class AudioClient {
 						if(player != null){player.stop(); }
 						// player.join();
 						// reset socket and input stream
-						socket = new Socket(args[0], port_num);
-						in = new BufferedInputStream(socket.getInputStream(), 2048);
+						// socket = new Socket(args[0], port_num);
+						// in = new BufferedInputStream(socket.getInputStream(), 2048);
 					}else{
 						System.err.println("ERROR: If you would like the song to stop playing please just type 'stop'.");
 					}
