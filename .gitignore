@@ -1,0 +1,10 @@
+jukebox-server
+
+*.mp3
+
+*.o
+*.class
+*.jar
+
+*.swp
+.DS_Store
